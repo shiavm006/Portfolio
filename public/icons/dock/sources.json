@@ -1,0 +1,74 @@
+{
+  "notion": {
+    "appName": "Notion",
+    "objectID": "l7MAtIRYp2",
+    "downloads": 14156,
+    "usersName": "patrickplaggenborg",
+    "source": "https://macosicons.com/?search=Notion",
+    "icnsUrl": "https://s3-new.macosicons.com/macosicons/parse/Notion_l7MAtIRYp2_icns-1c145b5e99.icns",
+    "lowResPngUrl": "https://s3-new.macosicons.com/macosicons/parse/Notion_l7MAtIRYp2_lowResPng-56a8a9a0be.png"
+  },
+  "whatsapp": {
+    "appName": "WhatsApp",
+    "objectID": "Dfp8thWsOz",
+    "downloads": 3218,
+    "usersName": "epicdude2121",
+    "source": "https://macosicons.com/?search=WhatsApp",
+    "icnsUrl": "https://s3-new.macosicons.com/macosicons/parse/WhatsApp_Dfp8thWsOz_icns-0a8296244d.icns",
+    "lowResPngUrl": "https://s3-new.macosicons.com/macosicons/parse/WhatsApp_Dfp8thWsOz_lowResPng-8643f2faad.png"
+  },
+  "gmail": {
+    "appName": "Gmail",
+    "objectID": "JrTBkHwWXN",
+    "downloads": 5191,
+    "usersName": "sklc",
+    "source": "https://macosicons.com/?search=Gmail",
+    "icnsUrl": "https://s3-new.macosicons.com/macosicons/parse/Gmail_JrTBkHwWXN_icns-452c7db3ae.icns",
+    "lowResPngUrl": "https://s3-new.macosicons.com/macosicons/parse/Gmail_JrTBkHwWXN_lowResPng-3c440d67d4.png"
+  },
+  "spotify": {
+    "appName": "Spotify",
+    "source": "/Applications/Spotify.app/Contents/Resources/AppIcon.icns",
+    "note": "Actual installed Spotify.app icon"
+  },
+  "github": {
+    "appName": "GitHub",
+    "objectID": "2O8P6rcaia",
+    "downloads": 1797,
+    "usersName": "zabriskije",
+    "source": "https://macosicons.com/?search=GitHub",
+    "icnsUrl": "https://s3-new.macosicons.com/macosicons/parse/GitHub_2O8P6rcaia_icns-0321150aab.icns",
+    "lowResPngUrl": "https://s3-new.macosicons.com/macosicons/parse/GitHub_2O8P6rcaia_lowResPng-9e5dc28926.png"
+  },
+  "x": {
+    "appName": "X",
+    "objectID": "NvYTPXJ4YI",
+    "downloads": 1481,
+    "usersName": "jxhug",
+    "source": "https://macosicons.com/?search=X",
+    "icnsUrl": "https://s3-new.macosicons.com/macosicons/parse/X_NvYTPXJ4YI_icns-09117f59cc.icns",
+    "lowResPngUrl": "https://s3-new.macosicons.com/macosicons/parse/X_NvYTPXJ4YI_lowResPng-445082758c.png"
+  },
+  "linkedin": {
+    "appName": "LinkedIn",
+    "objectID": "fCGMiEOWax",
+    "downloads": 1086,
+    "usersName": "shaonianruntu",
+    "source": "https://macosicons.com/?search=LinkedIn",
+    "icnsUrl": "https://s3-new.macosicons.com/macosicons/parse/LinkedIn_fCGMiEOWax_icns-6108d39a7d.icns",
+    "lowResPngUrl": "https://s3-new.macosicons.com/macosicons/parse/LinkedIn_fCGMiEOWax_lowResPng-53b888188d.png"
+  },
+  "trash": {
+    "appName": "Empty Bin",
+    "objectID": "lVRgezRq9O",
+    "downloads": 1625,
+    "usersName": "Oronzocana",
+    "source": "https://macosicons.com/?search=Empty+Bin",
+    "icnsUrl": "https://s3-new.macosicons.com/macosicons/parse/Empty_Bin_lVRgezRq9O_icns-9852c609a9.icns"
+  },
+  "claude": {
+    "appName": "Claude",
+    "source": "/Applications/Claude.app/Contents/Resources/electron.icns",
+    "note": "Actual Claude.app icon \u2014 orange bg, white star"
+  }
+}
