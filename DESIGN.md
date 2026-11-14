@@ -592,3 +592,6 @@ When photography is used (rare — mostly testimonials), avatars crop to perfect
 ## Build notes
 - Desktop shell online
 - Dock + notifications next
+
+- Claude mascot walk path locked
+- Hero roles: Product / GTM / Applied AI / Growth
