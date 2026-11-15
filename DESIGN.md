@@ -595,3 +595,5 @@ When photography is used (rare — mostly testimonials), avatars crop to perfect
 
 - Claude mascot walk path locked
 - Hero roles: Product / GTM / Applied AI / Growth
+
+- Chat bubble: hello from shivam
