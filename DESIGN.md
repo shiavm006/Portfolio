@@ -597,3 +597,5 @@ When photography is used (rare — mostly testimonials), avatars crop to perfect
 - Hero roles: Product / GTM / Applied AI / Growth
 
 - Chat bubble: hello from shivam
+
+- Ready to ship Mac desktop portfolio
