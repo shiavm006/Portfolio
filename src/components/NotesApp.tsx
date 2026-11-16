@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Search } from "lucide-react";
+import AboutBio, { ABOUT_BIO_TEXT } from "@/components/AboutBio";
 import MacWindow from "@/components/MacWindow";
 import { cn } from "@/lib/utils";
 
@@ -10,29 +11,31 @@ type Note = {
   title: string;
   preview: string;
   body: string;
+  content?: ReactNode;
   date: string;
 };
 
 const NOTES: Note[] = [
   {
-    id: "tips",
-    title: "Desktop tips",
-    preview: "⌘K Spotlight · clock opens Notification Centre",
-    body: "⌘K opens Spotlight.\nClick the clock for Notification Centre.\nTerminal understands help, whoami, about, projects.\nFolders on the right open Finder windows.\nDock Notes opens this app.",
+    id: "about",
+    title: "I’m Shivam Mittal",
+    preview: "Product, GTM, applied AI — let’s connect.",
+    body: ABOUT_BIO_TEXT,
+    content: <AboutBio />,
     date: "Today",
   },
   {
-    id: "about",
-    title: "About Shivam",
-    preview: "Product, GTM, Applied AI, Growth engineer.",
-    body: "Shivam Mittal\n\nProduct · GTM · Applied AI · Growth engineer.\n\nShips playful interfaces and Mac-inspired product details.\nOpen to collabs and interesting problems.",
+    id: "tips",
+    title: "Desktop tips",
+    preview: "⌘K Spotlight · clock opens Notification Centre",
+    body: "⌘K opens Spotlight.\nClick the clock for Notification Centre.\nFolders on the right open Finder windows.\nDock Notes opens this app.",
     date: "Yesterday",
   },
   {
     id: "stack",
     title: "What I build with",
-    preview: "Next.js, React, TypeScript, GSAP, Motion",
-    body: "Frontend — Next.js, React, TypeScript, GSAP, Motion\nApplied AI — agent UX, prompts, tooling workflows\nProduct & GTM — discovery, narrative, shipping loops\nCraft — interaction design, sound, micro-animation",
+    preview: "Motion, agents, product + GTM — tools in Skills.",
+    body: "Interfaces with motion and sound.\nAgents and automations that clear messy work.\nProduct + GTM as one loop: find what people want, then get it to them.\n\nFull tool list lives in Skills.",
     date: "Monday",
   },
 ];
@@ -46,6 +49,29 @@ type NotesAppProps = {
   onFocus?: () => void;
 };
 
+function NoteBody({ note }: { note: Note }) {
+  if (note.content) return <>{note.content}</>;
+
+  return (
+    <>
+      {note.body
+        .split(/\n{2,}/)
+        .map((block) => block.trim())
+        .filter(Boolean)
+        .map((block, i) => (
+          <p key={`${note.id}-${i}`}>
+            {block.split("\n").map((line, j, arr) => (
+              <span key={`${note.id}-${i}-${j}`}>
+                {line}
+                {j < arr.length - 1 ? <br /> : null}
+              </span>
+            ))}
+          </p>
+        ))}
+    </>
+  );
+}
+
 export default function NotesApp({
   open,
   minimized = false,
@@ -54,7 +80,7 @@ export default function NotesApp({
   onMinimize,
   onFocus,
 }: NotesAppProps) {
-  const [selectedId, setSelectedId] = useState(NOTES[0]!.id);
+  const [selectedId, setSelectedId] = useState("about");
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -131,11 +157,11 @@ export default function NotesApp({
             {selected ? (
               <>
                 <p className="mac-notes__date">{selected.date}</p>
-                <div className="mac-notes__paper">
-                  <h2 className="mac-notes__title">{selected.title}</h2>
-                  {selected.body.split("\n").map((line, i) => (
-                    <p key={`${selected.id}-${i}`}>{line || "\u00A0"}</p>
-                  ))}
+                <div className="mac-notes__paper" key={selected.id}>
+                  {selected.id === "about" ? null : (
+                    <h2 className="mac-notes__title">{selected.title}</h2>
+                  )}
+                  <NoteBody note={selected} />
                 </div>
               </>
             ) : (

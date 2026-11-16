@@ -88,7 +88,7 @@ const HOME_APPS: HomeApp[] = [
     id: "reminders",
     label: "Reminders",
     src: `${IOS}/Reminders.png`,
-    action: { type: "app", id: "terminal" },
+    action: { type: "app", id: "notes" },
   },
 ];
 

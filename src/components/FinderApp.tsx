@@ -9,12 +9,12 @@ import {
 } from "react";
 import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
 import MacWindow, { useMacWindowChrome } from "@/components/MacWindow";
+import AboutBio from "@/components/AboutBio";
 import {
   IconAbout,
   IconExperience,
   IconFolderLarge,
   IconProjects,
-  IconRecents,
   IconResume,
   IconSkills,
   IconViewColumns,
@@ -62,14 +62,14 @@ const SECTIONS: FinderSection[] = [
         name: "Bio",
         kind: "folder",
         detail:
-          "Product, GTM, Applied AI, and Growth engineer. Ships playful interfaces and Mac-inspired product details.",
+          "I’m into product and GTM — building something people want and getting it to them are one problem. CS student on the side: applied AI, automations, agents. Solve first, optimise later. I take my work seriously; myself less so. Mountains, music, long debates. This Mac portfolio? I just love my device a little too much. Find me interesting? Let’s connect.",
       },
       {
         id: "focus",
         name: "Focus Areas",
         kind: "folder",
         detail:
-          "Product discovery, GTM narrative, applied AI UX, and interaction craft.",
+          "Product & GTM (same problem, two ends) · Growth · Applied AI automations & agents · Solve first, optimise later.",
       },
       {
         id: "links",
@@ -157,7 +157,7 @@ const SECTIONS: FinderSection[] = [
         name: "Portfolio",
         kind: "folder",
         detail:
-          "Interactive macOS-style portfolio — dock, Spotlight, Terminal, notifications, Claude mascot.",
+          "Interactive macOS-style portfolio — dock, Spotlight, notifications, Claude mascot.",
         link: LINKS.portfolioRepo,
       },
       {
@@ -432,19 +432,6 @@ const SECTIONS: FinderSection[] = [
       },
     ],
   },
-  {
-    id: "notes",
-    name: "Recents",
-    items: [
-      {
-        id: "tips",
-        name: "Desktop tips",
-        kind: "folder",
-        detail:
-          "⌘K Spotlight · clock opens Notification Centre · Terminal: help, whoami, about, projects.",
-      },
-    ],
-  },
 ];
 
 const FAVORITES: {
@@ -457,7 +444,6 @@ const FAVORITES: {
   { id: "projects", label: "Projects", icon: IconProjects },
   { id: "skills", label: "Skills", icon: IconSkills },
   { id: "resume", label: "Resume", icon: IconResume },
-  { id: "notes", label: "Recents", icon: IconRecents },
 ];
 
 function sectionItemsOf(section: FinderSection): FinderItem[] {
@@ -831,6 +817,10 @@ function FinderChrome({
               selected={selected}
               onSelectItem={onSelectItem}
             />
+          ) : sectionId === "about" ? (
+            <div className="mac-finder__about" key="about-bio">
+              <AboutBio showLinks className="mac-finder__about-bio" />
+            </div>
           ) : (
             <>
               <div className="mac-finder__content-bar">

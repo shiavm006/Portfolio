@@ -7,7 +7,6 @@ import MacOSMenuBar from "@/components/ui/mac-os-menu-bar";
 import SpotlightSearch, {
   type SpotlightItem,
 } from "@/components/SpotlightSearch";
-import TerminalApp from "@/components/TerminalApp";
 import NotesApp from "@/components/NotesApp";
 import NotionApp from "@/components/NotionApp";
 import SpotifyApp from "@/components/SpotifyApp";
@@ -16,6 +15,7 @@ import NotificationCentre from "@/components/NotificationCentre";
 import ToastNotifications from "@/components/ToastNotifications";
 import FinderApp from "@/components/FinderApp";
 import IPhoneHome, { type IPhoneAppAction } from "@/components/IPhoneHome";
+import { AnnotatedText } from "@/components/ui/annotated-text";
 import TextRotate from "@/components/ui/text-rotate";
 import type { StackNotification } from "@/components/ui/notification-stack";
 import { initUiSound, playClick, playFolderClick } from "@/lib/uiSound";
@@ -33,11 +33,6 @@ const DOCK_APPS = [
     icon: "https://cdn.21st.dev/assets/mirror/99/9963f31f43cd77b0c28981ba7bac04db749a5749019f554d1afb75225a3e9151.png",
   },
   {
-    id: "terminal",
-    name: "Terminal",
-    icon: "https://cdn.21st.dev/assets/mirror/11/11d8587bae8852b8232d1f37e318c4b0fbbd2b0f2b61c71a79dbae327b4fa0c1.webp",
-  },
-  {
     id: "notes",
     name: "Notes",
     icon: "https://cdn.21st.dev/assets/mirror/cb/cbfa4e5db383bbb86683edc2f7d309e9fd7000d07833f6449837be51b77558fa.png",
@@ -46,6 +41,11 @@ const DOCK_APPS = [
     id: "notion",
     name: "Notion",
     icon: "/icons/dock/notion.png",
+  },
+  {
+    id: "messages",
+    name: "Messages",
+    icon: "/icons/dock/messages.png",
   },
   {
     id: "gmail",
@@ -103,14 +103,13 @@ const EXTERNAL_LINKS: Record<string, string> = {
   linkedin: LINKS.linkedin,
   claude: LINKS.claude,
   gmail: LINKS.gmail,
+  messages: LINKS.gmail,
 };
 
 export default function MacDesktop() {
   const [activeApp, setActiveApp] = useState("Finder");
   const [openApps, setOpenApps] = useState<string[]>(["finder"]);
   const [spotlightOpen, setSpotlightOpen] = useState(false);
-  const [terminalOpen, setTerminalOpen] = useState(false);
-  const [terminalMinimized, setTerminalMinimized] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [notesMinimized, setNotesMinimized] = useState(false);
   const [notionOpen, setNotionOpen] = useState(false);
@@ -121,7 +120,6 @@ export default function MacDesktop() {
   const [openFolder, setOpenFolder] = useState<FolderId | null>(null);
   const [folderMinimized, setFolderMinimized] = useState(false);
   const [folderZ, setFolderZ] = useState(45);
-  const [terminalZ, setTerminalZ] = useState(46);
   const [notesZ, setNotesZ] = useState(47);
   const [notionZ, setNotionZ] = useState(48);
   const [topZ, setTopZ] = useState(48);
@@ -138,11 +136,6 @@ export default function MacDesktop() {
       typeof id === "string" && id in FOLDER_WINDOWS ? id : openFolder;
     const win = key ? FOLDER_WINDOWS[key] : undefined;
     if (win) setActiveApp(win.title);
-  };
-
-  const focusTerminal = () => {
-    setTerminalZ(bumpZ());
-    setActiveApp("Terminal");
   };
 
   const focusNotes = () => {
@@ -270,14 +263,6 @@ export default function MacDesktop() {
   const openApp = (appId: string) => {
     if (appId === "dock-separator") return;
 
-    if (appId === "terminal") {
-      markOpen("terminal");
-      setTerminalOpen(true);
-      setTerminalMinimized(false);
-      focusTerminal();
-      return;
-    }
-
     if (appId === "finder") {
       if (openFolder && folderMinimized) {
         setFolderMinimized(false);
@@ -323,13 +308,6 @@ export default function MacDesktop() {
       markOpen(appId);
       window.open(link, "_blank", "noopener,noreferrer");
     }
-  };
-
-  const closeTerminal = () => {
-    setTerminalOpen(false);
-    setTerminalMinimized(false);
-    setOpenApps((prev) => prev.filter((id) => id !== "terminal"));
-    setActiveApp("Finder");
   };
 
   const handleSpotlightSelect = (item: SpotlightItem) => {
@@ -399,34 +377,47 @@ export default function MacDesktop() {
         className="mac-desktop__hero mac-desktop-only"
         aria-label="Product engineer"
       >
-        <LayoutGroup>
-          <motion.div
-            className="mac-desktop__hero-line"
-            layout
-            transition={{ type: "spring", damping: 30, stiffness: 400 }}
-          >
-            <TextRotate
-              as="span"
-              texts={["Product", "GTM", "Applied AI", "Growth"]}
-              mainClassName="mac-desktop__hero-rotate"
-              staggerFrom="last"
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "-120%" }}
-              staggerDuration={0.025}
-              splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1"
-              transition={{ type: "spring", damping: 30, stiffness: 400 }}
-              rotationInterval={2200}
-            />
-            <motion.span
-              className="mac-desktop__hero-role"
+        <div className="mac-desktop__hero-stack">
+          <p className="mac-desktop__hero-kicker">
+            Can&apos;t pick{" "}
+            <AnnotatedText variant="circle" animate delay={120}>
+              one title
+            </AnnotatedText>
+            , so I{" "}
+            <AnnotatedText variant="highlight" animate delay={420}>
+              rotate
+            </AnnotatedText>{" "}
+            between.
+          </p>
+          <LayoutGroup>
+            <motion.div
+              className="mac-desktop__hero-line"
               layout
               transition={{ type: "spring", damping: 30, stiffness: 400 }}
             >
-              engineer
-            </motion.span>
-          </motion.div>
-        </LayoutGroup>
+              <TextRotate
+                as="span"
+                texts={["Product", "GTM", "Applied AI", "Growth"]}
+                mainClassName="mac-desktop__hero-rotate"
+                staggerFrom="last"
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "-120%" }}
+                staggerDuration={0.025}
+                splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1"
+                transition={{ type: "spring", damping: 30, stiffness: 400 }}
+                rotationInterval={2200}
+              />
+              <motion.span
+                className="mac-desktop__hero-role"
+                layout
+                transition={{ type: "spring", damping: 30, stiffness: 400 }}
+              >
+                engineer
+              </motion.span>
+            </motion.div>
+          </LayoutGroup>
+        </div>
       </div>
 
       <div className="mac-desktop-only">
@@ -440,11 +431,7 @@ export default function MacDesktop() {
 
       <ToastNotifications
         paused={
-          notificationsOpen ||
-          spotlightOpen ||
-          terminalOpen ||
-          notesOpen ||
-          notionOpen
+          notificationsOpen || spotlightOpen || notesOpen || notionOpen
         }
         onOpenCentre={() => setNotificationsOpen(true)}
         onAbsorbIntoCentre={(notes) => setAbsorbedToasts(notes)}
@@ -471,15 +458,6 @@ export default function MacDesktop() {
           setOpenFolder(id);
           focusFolder(id);
         }}
-      />
-
-      <TerminalApp
-        open={terminalOpen}
-        minimized={terminalMinimized}
-        zIndex={terminalZ}
-        onClose={closeTerminal}
-        onMinimize={() => setTerminalMinimized(true)}
-        onFocus={focusTerminal}
       />
 
       <NotesApp

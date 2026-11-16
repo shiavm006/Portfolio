@@ -19,7 +19,7 @@ const TOAST_POOL: Omit<ToastNote, "id">[] = [
   {
     app: "About Me",
     title: "Shivam Mittal",
-    body: "Product · GTM · Applied AI · Growth engineer.",
+    body: "Product, GTM, applied AI. Let’s connect.",
     icon: "/icons/dock/claude.png",
   },
   {

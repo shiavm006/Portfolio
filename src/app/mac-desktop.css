@@ -175,6 +175,39 @@
   pointer-events: none;
 }
 
+.mac-desktop__hero-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  max-width: min(920px, 94vw);
+}
+
+.mac-desktop__hero-kicker {
+  margin: 0;
+  max-width: 34rem;
+  text-align: center;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: clamp(1.15rem, 2.2vw, 1.55rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.45;
+  color: #fff;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.28);
+}
+
+/* AnnotatedText marks — coral ink so they read on the green desktop */
+.mac-desktop__hero-kicker [data-slot="annotated-text"][data-variant="circle"] path,
+.mac-desktop__hero-kicker [data-slot="annotated-text"][data-variant="underline"] path,
+.mac-desktop__hero-kicker [data-slot="annotated-text"][data-variant="wavy"] path,
+.mac-desktop__hero-kicker [data-slot="annotated-text"][data-variant="box"] path {
+  stroke: #ff5941;
+}
+
+.mac-desktop__hero-kicker [data-slot="annotated-text"][data-variant="highlight"] path {
+  stroke: rgba(255, 89, 65, 0.55);
+}
+
 .mac-desktop__hero-line {
   display: flex;
   flex-wrap: wrap;
@@ -182,7 +215,6 @@
   justify-content: center;
   gap: 0.35em;
   margin: 0;
-  max-width: min(920px, 94vw);
   text-align: center;
   font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: clamp(1.6rem, 4.6vw, 3.4rem);
@@ -663,11 +695,36 @@
 }
 
 .mac-notes__paper p {
-  margin: 0 0 2px;
+  margin: 0 0 0.85em;
   font-size: 15px;
-  line-height: 1.55;
+  line-height: 1.45;
   color: #2c2c2e;
   letter-spacing: -0.01em;
+}
+
+.mac-notes__paper p:last-child {
+  margin-bottom: 0;
+}
+
+@keyframes mac-highlight-draw {
+  from {
+    transform: scaleX(0) scaleY(0.9) skewY(-1deg);
+    opacity: 0.35;
+  }
+  to {
+    transform: scaleX(1.1) scaleY(0.9) skewY(-1deg);
+    opacity: 1;
+  }
+}
+
+.mac-highlight {
+  animation: mac-highlight-draw 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mac-highlight {
+    animation: none;
+  }
 }
 
 .mac-notes__empty {
@@ -737,16 +794,26 @@
 }
 
 .mac-notion__workspace {
+  appearance: none;
+  border: 0;
+  width: calc(100% - 8px);
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0 4px 12px;
+  margin: 0 4px 8px;
   padding: 6px 8px;
   border-radius: 6px;
+  background: transparent;
   font-size: 13.5px;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: #37352f;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mac-notion__workspace:hover {
+  background: rgba(55, 53, 47, 0.06);
 }
 
 .mac-notion__workspace-icon {
@@ -755,6 +822,31 @@
   border-radius: 3px;
   object-fit: cover;
   flex-shrink: 0;
+}
+
+.mac-notion__search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 4px 12px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(55, 53, 47, 0.06);
+  color: rgba(55, 53, 47, 0.55);
+}
+
+.mac-notion__search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  color: #37352f;
+}
+
+.mac-notion__search input::placeholder {
+  color: rgba(55, 53, 47, 0.4);
 }
 
 .mac-notion__group {
@@ -774,16 +866,16 @@
   padding: 0;
 }
 
+.mac-notion__empty-nav {
+  margin: 8px 12px;
+  font-size: 12.5px;
+  color: rgba(55, 53, 47, 0.4);
+}
+
 .mac-notion__nav-title {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.mac-notion__meta {
-  margin: -8px 0 14px;
-  font-size: 13px;
-  color: rgba(55, 53, 47, 0.45);
 }
 
 .mac-notion__nav-item {
@@ -823,34 +915,176 @@
 .mac-notion__page {
   min-width: 0;
   min-height: 0;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
   background: #fff;
+}
+
+.mac-notion__topbar {
+  flex-shrink: 0;
+  padding: 8px 18px;
+  border-bottom: 1px solid rgba(55, 53, 47, 0.06);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+}
+
+.mac-notion__crumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12.5px;
+  color: rgba(55, 53, 47, 0.45);
+}
+
+.mac-notion__crumb {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: rgba(55, 53, 47, 0.55);
+  font: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+
+.mac-notion__crumb:hover {
+  color: #37352f;
+}
+
+.mac-notion__crumb.is-current {
+  color: rgba(55, 53, 47, 0.75);
+  cursor: default;
+  max-width: 360px;
+}
+
+.mac-notion__crumb-sep {
+  opacity: 0.45;
+}
+
+.mac-notion__scroll {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+}
+
+.mac-notion__cover {
+  height: 88px;
+  background:
+    linear-gradient(
+      120deg,
+      rgba(35, 131, 226, 0.14),
+      rgba(197, 248, 58, 0.18) 45%,
+      rgba(255, 220, 140, 0.22)
+    ),
+    #f1f1ef;
 }
 
 .mac-notion__page-inner {
   max-width: 720px;
-  margin: 0 auto;
-  padding: 48px 56px 64px;
+  margin: -28px auto 0;
+  padding: 0 56px 64px;
+  animation: mac-notion-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes mac-notion-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mac-notion__page-inner {
+    animation: none;
+  }
 }
 
 .mac-notion__page-icon {
-  width: 56px;
-  height: 56px;
-  margin-bottom: 8px;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 6px;
   display: grid;
   place-items: center;
-  font-size: 42px;
+  font-size: 52px;
   line-height: 1;
-  color: rgba(55, 53, 47, 0.55);
+  color: rgba(55, 53, 47, 0.7);
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.06));
 }
 
 .mac-notion__title {
-  margin: 0 0 18px;
+  margin: 0 0 14px;
   font-size: 36px;
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.15;
   color: #37352f;
+}
+
+.mac-notion__props {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0 0 14px;
+  border-bottom: 1px solid rgba(55, 53, 47, 0.08);
+}
+
+.mac-notion__prop {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.mac-notion__prop dt {
+  margin: 0;
+  font-size: 12.5px;
+  color: rgba(55, 53, 47, 0.45);
+}
+
+.mac-notion__prop dd {
+  margin: 0;
+  font-size: 13px;
+  color: #37352f;
+}
+
+.mac-notion__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mac-notion__tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(35, 131, 226, 0.1);
+  color: #2383e2;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.mac-notion__status {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(15, 123, 108, 0.1);
+  color: #0f7b6c;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.mac-notion__summary {
+  margin: 0 0 18px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: rgba(55, 53, 47, 0.65);
 }
 
 .mac-notion__content {
@@ -864,19 +1098,19 @@
 }
 
 .mac-notion__lead {
-  margin: 0 0 22px;
-  color: rgba(55, 53, 47, 0.85);
+  margin: 0 0 18px;
+  color: rgba(55, 53, 47, 0.88);
 }
 
 .mac-notion__h3 {
-  margin: 0 0 8px;
+  margin: 22px 0 10px;
   font-size: 18px;
   font-weight: 650;
   letter-spacing: -0.02em;
 }
 
 .mac-notion__bullets {
-  margin: 0 0 18px;
+  margin: 0 0 16px;
   padding-left: 1.35em;
 }
 
@@ -885,11 +1119,19 @@
 }
 
 .mac-notion__callout {
-  margin: 0 0 12px;
-  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 14px 16px;
   border-radius: 8px;
   background: rgba(55, 53, 47, 0.04);
   border: 1px solid rgba(55, 53, 47, 0.06);
+}
+
+.mac-notion__callout-icon {
+  font-size: 18px;
+  line-height: 1.2;
 }
 
 .mac-notion__callout strong {
@@ -898,10 +1140,71 @@
   font-size: 14.5px;
 }
 
+.mac-notion__callout-body p,
 .mac-notion__callout p {
   margin: 0;
   font-size: 14px;
+  line-height: 1.5;
   color: rgba(55, 53, 47, 0.8);
+}
+
+.mac-notion__cards {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.mac-notion__card {
+  appearance: none;
+  border: 1px solid rgba(55, 53, 47, 0.1);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.mac-notion__card:hover {
+  background: rgba(55, 53, 47, 0.03);
+  border-color: rgba(55, 53, 47, 0.16);
+  transform: translateY(-1px);
+}
+
+.mac-notion__card-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(55, 53, 47, 0.05);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.mac-notion__card-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mac-notion__card-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #37352f;
+}
+
+.mac-notion__card-meta {
+  font-size: 12.5px;
+  color: rgba(55, 53, 47, 0.5);
 }
 
 .mac-notion__links {
@@ -933,12 +1236,20 @@
     display: none;
   }
 
+  .mac-notion__cover {
+    height: 64px;
+  }
+
   .mac-notion__page-inner {
-    padding: 28px 22px 40px;
+    padding: 0 22px 40px;
   }
 
   .mac-notion__title {
     font-size: 28px;
+  }
+
+  .mac-notion__prop {
+    grid-template-columns: 72px 1fr;
   }
 }
 
@@ -1200,6 +1511,61 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.mac-finder__about {
+  min-height: 0;
+  overflow: auto;
+  padding: 22px 28px 32px;
+  background: #1c1c1e;
+}
+
+.mac-finder__about-bio {
+  max-width: 42rem;
+  margin: 0 auto;
+  color: rgba(245, 245, 247, 0.92);
+}
+
+.mac-finder__about-bio .about-bio__title {
+  margin: 0 0 14px;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: #f5f5f7;
+}
+
+.mac-finder__about-bio p {
+  margin: 0 0 0.85em;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: rgba(235, 235, 245, 0.82);
+}
+
+.mac-finder__about-bio p:last-child {
+  margin-bottom: 0;
+}
+
+.mac-finder__about-bio .about-bio__links a {
+  color: #0a84ff;
+  text-decoration: none;
+}
+
+.mac-finder__about-bio .about-bio__links a:hover {
+  text-decoration: underline;
+}
+
+.about-bio__title {
+  margin: 0 0 10px;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: #1d1d1f;
+}
+
+.mac-notes__paper .about-bio__title {
+  margin-bottom: 10px;
 }
 
 .mac-finder__gallery-pane {

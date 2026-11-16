@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import AboutBio from "@/components/AboutBio";
 
 export type FolderId =
   | "about"
@@ -25,33 +26,7 @@ export const FOLDER_WINDOWS: Record<
 > = {
   about: {
     title: "About Me",
-    body: (
-      <>
-        <h2>Shivam Mittal</h2>
-        <p>
-          Product, GTM, Applied AI, and Growth engineer. I ship playful
-          interfaces and Mac-inspired product details.
-        </p>
-        <ul>
-          <li>Builds product experiences end-to-end</li>
-          <li>Cares about motion, sound, and craft</li>
-          <li>Open to collabs and interesting problems</li>
-        </ul>
-        <p>
-          <a href={LINKS.github} target="_blank" rel="noopener noreferrer">
-            GitHub
-          </a>
-          {" · "}
-          <a href={LINKS.linkedin} target="_blank" rel="noopener noreferrer">
-            LinkedIn
-          </a>
-          {" · "}
-          <a href={LINKS.x} target="_blank" rel="noopener noreferrer">
-            X
-          </a>
-        </p>
-      </>
-    ),
+    body: <AboutBio showLinks />,
   },
   experience: {
     title: "Experience",
@@ -141,7 +116,7 @@ export const FOLDER_WINDOWS: Record<
         <ul>
           <li>
             <strong>Portfolio desktop</strong> — interactive macOS-style site
-            with dock, Spotlight, Terminal, and Claude mascot.{" "}
+            with dock, Spotlight, and Claude mascot.{" "}
             <a
               href={LINKS.portfolioRepo}
               target="_blank"
@@ -195,8 +170,8 @@ export const FOLDER_WINDOWS: Record<
       <>
         <h2>Resume</h2>
         <p>
-          Product / GTM / Applied AI / Growth engineer focused on shipping
-          polished interfaces and clear product stories.
+          Product & GTM, applied AI, leaning growth. Solve the problem first,
+          optimise later.
         </p>
         <p>
           Prefer a live trail? Browse{" "}
@@ -223,7 +198,6 @@ export const FOLDER_WINDOWS: Record<
         <ul>
           <li>⌘K opens Spotlight</li>
           <li>Click the clock / bell for Notification Centre</li>
-          <li>Terminal understands help, whoami, about, projects</li>
           <li>Folders on the right open real windows</li>
         </ul>
       </>

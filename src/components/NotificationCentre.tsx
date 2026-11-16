@@ -13,7 +13,7 @@ const BASE_NOTIFICATIONS: StackNotification[] = [
     time: "now",
     app: "About Me",
     title: "Shivam Mittal",
-    body: "Product · GTM · Applied AI · Growth. Shipping playful interfaces.",
+    body: "Product, GTM, applied AI. Find me interesting? Let’s connect.",
     icon: (
       <span className="flex size-8 items-center justify-center rounded-lg bg-[#DD775B] text-white">
         <Sparkles className="size-4" />

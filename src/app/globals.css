@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  --accent-green: #c5f83a;
   --background: #0f6f6c;
   --foreground: #ffffff;
   --card: rgba(255, 255, 255, 0.92);
@@ -21,6 +22,7 @@
 }
 
 @theme inline {
+  --color-accent-green: var(--accent-green);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
