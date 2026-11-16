@@ -106,9 +106,9 @@ const DOCK_APPS: HomeApp[] = [
     action: { type: "app", id: "github" },
   },
   {
-    id: "messages",
-    label: "Messages",
-    src: `${IOS}/Messages.png`,
+    id: "notes-dock",
+    label: "Notes",
+    src: `${IOS}/Notes.png`,
     action: { type: "app", id: "notes" },
   },
   {

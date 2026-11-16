@@ -43,11 +43,6 @@ const DOCK_APPS = [
     icon: "/icons/dock/notion.png",
   },
   {
-    id: "messages",
-    name: "Messages",
-    icon: "/icons/dock/messages.png",
-  },
-  {
     id: "gmail",
     name: "Gmail",
     icon: "/icons/dock/gmail.png",
@@ -103,7 +98,6 @@ const EXTERNAL_LINKS: Record<string, string> = {
   linkedin: LINKS.linkedin,
   claude: LINKS.claude,
   gmail: LINKS.gmail,
-  messages: LINKS.gmail,
 };
 
 export default function MacDesktop() {

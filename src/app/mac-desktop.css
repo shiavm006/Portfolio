@@ -197,15 +197,21 @@
 }
 
 /* AnnotatedText marks — coral ink so they read on the green desktop */
+.mac-desktop__hero-kicker [data-slot="annotated-text-mark"] {
+  overflow: visible;
+}
+
 .mac-desktop__hero-kicker [data-slot="annotated-text"][data-variant="circle"] path,
 .mac-desktop__hero-kicker [data-slot="annotated-text"][data-variant="underline"] path,
 .mac-desktop__hero-kicker [data-slot="annotated-text"][data-variant="wavy"] path,
 .mac-desktop__hero-kicker [data-slot="annotated-text"][data-variant="box"] path {
   stroke: #ff5941;
+  stroke-width: 2.25;
 }
 
 .mac-desktop__hero-kicker [data-slot="annotated-text"][data-variant="highlight"] path {
-  stroke: rgba(255, 89, 65, 0.55);
+  stroke: rgba(255, 214, 90, 0.72);
+  stroke-width: 12;
 }
 
 .mac-desktop__hero-line {

@@ -13,7 +13,7 @@
  * Source: https://21st.dev/@kokonutd/components/notification-stack
  */
 
-import { CalendarDays, CreditCard, Mail, MessageCircle, X } from "lucide-react";
+import { CalendarDays, CreditCard, Mail, X } from "lucide-react";
 import {
   type KeyboardEvent,
   type PointerEvent,
@@ -37,13 +37,13 @@ export interface StackNotification {
 const DEFAULT_NOTIFICATIONS: StackNotification[] = [
   {
     id: "n-1",
-    app: "Messages",
+    app: "Mail",
     title: "Maya Chen",
     body: "Pushed the fix. Can you take a look before standup?",
     time: "now",
     icon: (
-      <span className="flex size-8 items-center justify-center rounded-lg bg-emerald-500 text-white">
-        <MessageCircle className="size-4" />
+      <span className="flex size-8 items-center justify-center rounded-lg bg-sky-500 text-white">
+        <Mail className="size-4" />
       </span>
     ),
   },
