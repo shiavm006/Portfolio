@@ -1,0 +1,18 @@
+{
+  "parsewave": {
+    "file": "parsewave.png",
+    "source": "https://parsewave.ai/images/icon-192.png"
+  },
+  "blinkmoney": {
+    "files": ["blinkmoney.png", "blinkmoney.svg"],
+    "source": "https://www.blinkmoney.in/favicon-512.png + site SVG"
+  },
+  "omegaup": {
+    "files": ["omegaup.png", "omegaup.svg"],
+    "source": "https://omegaup.com/favicon.ico (Ω mark) + github.com/omegaup/omegaup media/omegaup_curves.svg"
+  },
+  "vidhyalay": {
+    "file": "vidhyalay.png",
+    "source": "left as-is"
+  }
+}

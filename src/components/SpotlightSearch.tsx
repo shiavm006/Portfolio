@@ -3,13 +3,13 @@
 import {
   useCallback,
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
 } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import gsap from "gsap";
+import { ChevronRight, Search } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export type SpotlightItem = {
   id: string;
@@ -25,31 +25,138 @@ type SpotlightSearchProps = {
   onSelect: (item: SpotlightItem) => void;
 };
 
-function MagnifierIcon() {
+function SpotlightPlaceholder({
+  text,
+  className,
+}: {
+  text: string;
+  className?: string;
+}) {
   return (
-    <svg
-      className="mac-spotlight__magnifier"
-      viewBox="0 0 24 24"
-      width="22"
-      height="22"
-      aria-hidden
+    <motion.div
+      layout
+      className={cn(
+        "absolute inset-y-0 left-0 flex items-center pointer-events-none z-10 text-gray-500",
+        className,
+      )}
     >
-      <circle
-        cx="10.5"
-        cy="10.5"
-        r="6.25"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-      />
-      <path
-        d="M15.4 15.4 L20.2 20.2"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-      />
-    </svg>
+      <AnimatePresence mode="popLayout">
+        <motion.p
+          key={text}
+          layoutId={`spotlight-placeholder-${text}`}
+          initial={{ opacity: 0, y: 10, filter: "blur(5px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          exit={{ opacity: 0, y: -10, filter: "blur(5px)" }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="m-0"
+        >
+          {text}
+        </motion.p>
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+function SpotlightInput({
+  placeholder,
+  hidePlaceholder,
+  value,
+  onChange,
+  placeholderClassName,
+}: {
+  placeholder: string;
+  hidePlaceholder: boolean;
+  value: string;
+  onChange: (value: string) => void;
+  placeholderClassName?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => inputRef.current?.focus(), 40);
+    return () => window.clearTimeout(id);
+  }, []);
+
+  return (
+    <div className="flex items-center w-full justify-start gap-2 px-6 h-16">
+      <motion.div layoutId="spotlight-search-icon" className="shrink-0">
+        <Search className="size-7 stroke-[1.4]" />
+      </motion.div>
+      <div className="flex-1 relative text-2xl">
+        {!hidePlaceholder ? (
+          <SpotlightPlaceholder
+            text={placeholder}
+            className={placeholderClassName}
+          />
+        ) : null}
+        <motion.input
+          ref={inputRef}
+          layout="position"
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full bg-transparent outline-none border-0 p-0 text-black caret-black"
+          aria-label="Spotlight Search"
+          autoComplete="off"
+          spellCheck={false}
+        />
+      </div>
+    </div>
+  );
+}
+
+function SearchResultRow({
+  item,
+  active,
+  isLast,
+  onHover,
+  onChoose,
+}: {
+  item: SpotlightItem;
+  active: boolean;
+  isLast: boolean;
+  onHover: () => void;
+  onChoose: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onMouseEnter={onHover}
+      onClick={onChoose}
+      className={cn(
+        "flex items-center text-black justify-start gap-3 py-2 px-2 rounded-xl w-full appearance-none border-0 bg-transparent text-left cursor-default",
+        active && "bg-white shadow-md",
+        isLast && "rounded-b-3xl",
+      )}
+    >
+      <span className="size-8 aspect-square flex items-center justify-center shrink-0">
+        {item.icon ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={item.icon}
+            alt=""
+            width={28}
+            height={28}
+            className="size-7 object-contain"
+            draggable={false}
+          />
+        ) : (
+          <span className="size-7 rounded-md bg-neutral-300" />
+        )}
+      </span>
+      <span className="flex flex-col min-w-0">
+        <span className="font-medium truncate">{item.name}</span>
+        <span className="text-xs opacity-50">{item.kind}</span>
+      </span>
+      <span
+        className={cn(
+          "flex-1 flex items-center justify-end transition-opacity duration-200",
+          active ? "opacity-100" : "opacity-0",
+        )}
+      >
+        <ChevronRight className="size-6" />
+      </span>
+    </button>
   );
 }
 
@@ -59,84 +166,44 @@ export default function SpotlightSearch({
   items,
   onSelect,
 }: SpotlightSearchProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const resultsRef = useRef<HTMLUListElement>(null);
-  const listId = useId();
   const [query, setQuery] = useState("");
+  const [hoveredResult, setHoveredResult] = useState<number | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return items.slice(0, 6);
+    if (!q) return [];
     return items
       .filter((item) => item.name.toLowerCase().includes(q))
       .slice(0, 8);
   }, [items, query]);
 
-  const showResults = query.trim().length > 0 || results.length > 0;
-
-  useEffect(() => {
-    if (!open) {
-      setQuery("");
-      setActiveIndex(0);
-      return;
-    }
+  const close = useCallback(() => {
+    setQuery("");
+    setHoveredResult(null);
     setActiveIndex(0);
-    const id = window.setTimeout(() => inputRef.current?.focus(), 80);
-    return () => window.clearTimeout(id);
-  }, [open]);
-
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [query]);
-
-  // Smooth result-list reveal whenever results change
-  useEffect(() => {
-    if (!open || !resultsRef.current) return;
-    const rows = resultsRef.current.querySelectorAll(".mac-spotlight__row");
-    gsap.fromTo(
-      rows,
-      { opacity: 0, y: 8 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.28,
-        stagger: 0.035,
-        ease: "power2.out",
-        overwrite: true,
-      },
-    );
-  }, [open, results]);
-
-  const close = useCallback(() => onOpenChange(false), [onOpenChange]);
+    onOpenChange(false);
+  }, [onOpenChange]);
 
   const choose = useCallback(
     (item: SpotlightItem) => {
-      const panel = panelRef.current;
-      if (panel) {
-        gsap.fromTo(
-          panel,
-          { scale: 1 },
-          {
-            scale: 0.985,
-            duration: 0.08,
-            yoyo: true,
-            repeat: 1,
-            ease: "power1.inOut",
-            onComplete: () => {
-              onSelect(item);
-              close();
-            },
-          },
-        );
-        return;
-      }
       onSelect(item);
       close();
     },
     [close, onSelect],
   );
+
+  useEffect(() => {
+    if (!open) {
+      setQuery("");
+      setHoveredResult(null);
+      setActiveIndex(0);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [query]);
 
   useEffect(() => {
     if (!open) return;
@@ -147,9 +214,10 @@ export default function SpotlightSearch({
         close();
         return;
       }
+      if (!results.length) return;
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        setActiveIndex((i) => Math.min(i + 1, Math.max(results.length - 1, 0)));
+        setActiveIndex((i) => Math.min(i + 1, results.length - 1));
         return;
       }
       if (e.key === "ArrowUp") {
@@ -159,7 +227,7 @@ export default function SpotlightSearch({
       }
       if (e.key === "Enter" && results[activeIndex]) {
         e.preventDefault();
-        choose(results[activeIndex]);
+        choose(results[activeIndex]!);
       }
     };
 
@@ -167,134 +235,126 @@ export default function SpotlightSearch({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [activeIndex, choose, close, open, results]);
 
+  const placeholder =
+    hoveredResult !== null && results[hoveredResult]
+      ? results[hoveredResult]!.name
+      : "Search";
+
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="popLayout">
       {open ? (
-        <motion.div
-          className="mac-spotlight"
+        <div
+          className="mac-spotlight absolute inset-0 z-[80] flex flex-col items-center justify-start pt-[25vh] pointer-events-auto"
+          onClick={close}
           role="presentation"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.18 }}
         >
-          <motion.button
-            type="button"
-            className="mac-spotlight__backdrop"
-            aria-label="Close Spotlight"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            onClick={close}
-          />
-
-          <motion.div
-            ref={panelRef}
-            className="mac-spotlight__panel"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Spotlight Search"
-            initial={{ opacity: 0, y: -18, scale: 0.94 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.96 }}
-            transition={{
-              type: "spring",
-              stiffness: 420,
-              damping: 32,
-              mass: 0.85,
-            }}
+          <div
+            className="w-full flex flex-col max-w-xl px-4 gap-4"
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="mac-spotlight__search">
-              <MagnifierIcon />
-              <input
-                ref={inputRef}
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Spotlight Search"
-                className="mac-spotlight__input"
-                aria-controls={listId}
-                aria-autocomplete="list"
-                autoComplete="off"
-                spellCheck={false}
-              />
-            </div>
+            <motion.div
+              initial={{
+                opacity: 0,
+                filter: "blur(16px)",
+                scaleX: 1.18,
+                scaleY: 1.08,
+                y: -10,
+              }}
+              animate={{
+                opacity: 1,
+                filter: "blur(0px)",
+                scaleX: 1,
+                scaleY: 1,
+                y: 0,
+              }}
+              exit={{
+                opacity: 0,
+                filter: "blur(16px)",
+                scaleX: 1.18,
+                scaleY: 1.08,
+                y: 10,
+              }}
+              transition={{ stiffness: 550, damping: 50, type: "spring" }}
+              className="w-full flex items-center justify-center z-20"
+            >
+              <motion.div
+                layout
+                transition={{
+                  layout: { duration: 0.45, type: "spring", bounce: 0.2 },
+                }}
+                style={{ borderRadius: query.trim() ? 28 : 999 }}
+                className="h-full w-full flex flex-col items-center justify-start z-10 relative shadow-[0_12px_40px_rgba(0,0,0,0.28)] overflow-hidden border border-white/40 bg-neutral-100/95 text-black backdrop-blur-xl"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Spotlight Search"
+              >
+                <SpotlightInput
+                  placeholder={placeholder}
+                  placeholderClassName={
+                    hoveredResult !== null
+                      ? "text-black"
+                      : "text-gray-500"
+                  }
+                  hidePlaceholder={!(hoveredResult !== null || !query)}
+                  value={query}
+                  onChange={setQuery}
+                />
 
-            <AnimatePresence initial={false} mode="popLayout">
-              {showResults ? (
-                <motion.div
-                  key={query.trim() ? "filtered" : "suggestions"}
-                  className="mac-spotlight__body"
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{
-                    height: {
-                      type: "spring",
-                      stiffness: 380,
-                      damping: 34,
-                    },
-                    opacity: { duration: 0.18 },
-                  }}
-                >
-                  {results.length > 0 ? (
-                    <>
-                      {!query.trim() ? (
-                        <p className="mac-spotlight__section">Top Hit</p>
-                      ) : null}
-                      <ul
-                        ref={resultsRef}
-                        id={listId}
-                        className="mac-spotlight__results"
-                        role="listbox"
+                <AnimatePresence initial={false}>
+                  {query.trim() ? (
+                    <motion.div
+                      key="results"
+                      layout
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.22, ease: "easeOut" }}
+                      className="w-full overflow-hidden border-t border-black/10 bg-neutral-100"
+                    >
+                      <div
+                        className="px-2 flex flex-col max-h-80 overflow-y-auto w-full py-2"
+                        onMouseLeave={() => setHoveredResult(null)}
                       >
-                        {results.map((item, index) => {
-                          const selected = index === activeIndex;
-                          return (
-                            <li
+                        {results.length > 0 ? (
+                          results.map((item, index) => (
+                            <motion.div
                               key={item.id}
-                              role="option"
-                              aria-selected={selected}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{
+                                delay: index * 0.04,
+                                duration: 0.2,
+                                ease: "easeOut",
+                              }}
                             >
-                              <button
-                                type="button"
-                                className={`mac-spotlight__row${selected ? " is-active" : ""}`}
-                                onMouseEnter={() => setActiveIndex(index)}
-                                onClick={() => choose(item)}
-                              >
-                                <span className="mac-spotlight__icon-wrap">
-                                  <img
-                                    src={item.icon}
-                                    alt=""
-                                    width={40}
-                                    height={40}
-                                    className="mac-spotlight__icon"
-                                    draggable={false}
-                                  />
-                                </span>
-                                <span className="mac-spotlight__meta">
-                                  <span className="mac-spotlight__name">
-                                    {item.name}
-                                  </span>
-                                  <span className="mac-spotlight__kind">
-                                    {item.kind}
-                                  </span>
-                                </span>
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </>
-                  ) : (
-                    <p className="mac-spotlight__empty">No Results</p>
-                  )}
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
-          </motion.div>
-        </motion.div>
+                              <SearchResultRow
+                                item={item}
+                                active={
+                                  index === activeIndex ||
+                                  index === hoveredResult
+                                }
+                                isLast={index === results.length - 1}
+                                onHover={() => {
+                                  setHoveredResult(index);
+                                  setActiveIndex(index);
+                                }}
+                                onChoose={() => choose(item)}
+                              />
+                            </motion.div>
+                          ))
+                        ) : (
+                          <p className="m-0 px-3 py-4 text-center text-sm text-black/40">
+                            No Results
+                          </p>
+                        )}
+                      </div>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+              </motion.div>
+            </motion.div>
+          </div>
+        </div>
       ) : null}
     </AnimatePresence>
   );

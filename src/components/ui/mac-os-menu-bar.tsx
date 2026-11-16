@@ -1,6 +1,12 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Volume2, VolumeX } from "lucide-react";
+import {
+  isUiSoundMuted,
+  subscribeUiSoundMuted,
+  toggleUiSoundMuted,
+} from "@/lib/uiSound";
 
 export type MenuAction = string;
 
@@ -323,10 +329,16 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
   className = "",
 }) => {
   const [clock, setClock] = useState("");
+  const [soundMuted, setSoundMuted] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const appleRef = useRef<HTMLDivElement>(null);
   const menuRefs = useRef<Record<string, HTMLSpanElement | null>>({});
+
+  useEffect(() => {
+    setSoundMuted(isUiSoundMuted());
+    return subscribeUiSoundMuted(setSoundMuted);
+  }, []);
 
   useEffect(() => {
     const updateTime = () => {
@@ -422,13 +434,30 @@ const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-3">
             <div className="cursor-pointer hover:opacity-80 transition-opacity duration-150">
               <BatteryIcon />
             </div>
             <div className="cursor-pointer hover:opacity-80 transition-opacity duration-150">
               <WifiIcon />
             </div>
+            <button
+              type="button"
+              className={`mac-menubar-sound ${soundMuted ? "is-muted" : ""}`}
+              aria-label={soundMuted ? "Unmute sounds" : "Mute sounds"}
+              aria-pressed={soundMuted}
+              title={soundMuted ? "Unmute" : "Mute"}
+              onClick={() => {
+                setOpenMenu(null);
+                toggleUiSoundMuted();
+              }}
+            >
+              {soundMuted ? (
+                <VolumeX className="mac-menubar-sound__icon" strokeWidth={2.25} />
+              ) : (
+                <Volume2 className="mac-menubar-sound__icon" strokeWidth={2.25} />
+              )}
+            </button>
             <button
               type="button"
               className={`mac-menubar-clock text-white text-sm font-medium select-none ml-1 cursor-pointer hover:opacity-80 transition-opacity duration-150 rounded px-1.5 py-0.5 ${

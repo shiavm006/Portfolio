@@ -1,0 +1,28 @@
+{
+  "note": "Apple-style iOS home icons for the mobile portfolio shell.",
+  "fromTroy351": {
+    "repo": "https://github.com/troy351/iOS10-SVG-ICONS",
+    "icons": [
+      "Contacts",
+      "Pages",
+      "Notes",
+      "Mail",
+      "Music",
+      "Phone",
+      "Safari",
+      "Messages",
+      "Settings",
+      "Photos",
+      "Camera",
+      "Calendar",
+      "Reminders",
+      "AppStore",
+      "FaceTime",
+      "Weather",
+      "Health",
+      "Maps",
+      "Stocks"
+    ]
+  },
+  "custom": ["Files", "Shortcuts"]
+}

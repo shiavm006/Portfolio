@@ -1,16 +1,27 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import CrowdCanvas from "@/components/CrowdCanvas";
 import HelloSplash from "@/components/HelloSplash";
 import MacDesktop from "@/components/MacDesktop";
 import "./mac-desktop.css";
+
+function shouldSkipSplash() {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).has("skip");
+}
 
 export default function Home() {
   const [phase, setPhase] = useState<"splash" | "desktop">("splash");
   const splashRef = useRef<HTMLDivElement>(null);
   const leavingRef = useRef(false);
+
+  useEffect(() => {
+    if (shouldSkipSplash()) {
+      leavingRef.current = true;
+      setPhase("desktop");
+    }
+  }, []);
 
   const goToDesktop = useCallback(() => {
     if (leavingRef.current) return;
@@ -42,7 +53,7 @@ export default function Home() {
 
   return (
     <main className="home-root">
-      <MacDesktop />
+      {phase === "desktop" ? <MacDesktop /> : null}
 
       {phase === "splash" ? (
         <div
@@ -52,7 +63,17 @@ export default function Home() {
           role="presentation"
         >
           <HelloSplash onComplete={onHelloComplete} />
-          <CrowdCanvas src="/images/peeps/all-peeps.png" rows={15} cols={7} />
+          <button
+            type="button"
+            className="splash-skip"
+            data-ui-sound="click"
+            onClick={(e) => {
+              e.stopPropagation();
+              goToDesktop();
+            }}
+          >
+            Skip intro
+          </button>
         </div>
       ) : null}
     </main>

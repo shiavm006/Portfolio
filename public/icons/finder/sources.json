@@ -1,0 +1,19 @@
+{
+  "note": "Extracted from macOS CoreTypes.bundle Sidebar*.icns, tinted #0A84FF for Finder Favourites.",
+  "systemPath": "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources",
+  "sidebar-about": "SidebarHomeFolder.icns",
+  "sidebar-experience": "SidebarTimeMachine.icns",
+  "sidebar-projects": "SidebarDesktopFolder.icns",
+  "sidebar-skills": "SidebarApplicationsFolder.icns",
+  "sidebar-resume": "SidebarGenericFile.icns",
+  "sidebar-recents": "SidebarRecents.icns",
+  "sidebar-documents": "SidebarDocumentsFolder.icns",
+  "sidebar-downloads": "SidebarDownloadsFolder.icns",
+  "sidebar-applications": "SidebarApplicationsFolder.icns",
+  "sidebar-desktop": "SidebarDesktopFolder.icns",
+  "folder": "GenericFolderIcon.icns",
+  "folder-applications": "ApplicationsFolderIcon.icns",
+  "folder-documents": "DocumentsFolderIcon.icns",
+  "folder-downloads": "DownloadsFolder.icns",
+  "folder-desktop": "DesktopFolderIcon.icns"
+}

@@ -1,17 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { GitBranch, Mail, NotebookPen, Sparkles, UserRound, X } from "lucide-react";
+import { useEffect, useMemo } from "react";
+import { GitBranch, Mail, NotebookPen, Sparkles, X } from "lucide-react";
 import NotificationStack, {
   type StackNotification,
 } from "@/components/ui/notification-stack";
 import { cn } from "@/lib/utils";
 
-const ABOUT_POOL: Omit<StackNotification, "id" | "time">[] = [
+const BASE_NOTIFICATIONS: StackNotification[] = [
   {
+    id: "nc-about",
+    time: "now",
     app: "About Me",
     title: "Shivam Mittal",
-    body: "Builder · designer-minded engineer. Shipping playful interfaces.",
+    body: "Product · GTM · Applied AI · Growth. Shipping playful interfaces.",
     icon: (
       <span className="flex size-8 items-center justify-center rounded-lg bg-[#DD775B] text-white">
         <Sparkles className="size-4" />
@@ -19,9 +21,11 @@ const ABOUT_POOL: Omit<StackNotification, "id" | "time">[] = [
     ),
   },
   {
+    id: "nc-projects",
+    time: "2m",
     app: "Projects",
-    title: "New drop in the folder",
-    body: "Open Projects to see the latest experiments and shipped work.",
+    title: "Open the Projects folder",
+    body: "See shipped work and experiments on the desktop.",
     icon: (
       <span className="flex size-8 items-center justify-center rounded-lg bg-blue-500 text-white">
         <NotebookPen className="size-4" />
@@ -29,9 +33,11 @@ const ABOUT_POOL: Omit<StackNotification, "id" | "time">[] = [
     ),
   },
   {
+    id: "nc-github",
+    time: "9:50",
     app: "GitHub",
-    title: "shiavm006 is active",
-    body: "Recent commits landed. Peek the repos when you have a minute.",
+    title: "shiavm006",
+    body: "Public repos and portfolio source live here.",
     icon: (
       <span className="flex size-8 items-center justify-center rounded-lg bg-zinc-900 text-white">
         <GitBranch className="size-4" />
@@ -39,16 +45,8 @@ const ABOUT_POOL: Omit<StackNotification, "id" | "time">[] = [
     ),
   },
   {
-    app: "LinkedIn",
-    title: "Profile views",
-    body: "A few people checked your profile this week. Nice signal.",
-    icon: (
-      <span className="flex size-8 items-center justify-center rounded-lg bg-[#0A66C2] text-white">
-        <UserRound className="size-4" />
-      </span>
-    ),
-  },
-  {
+    id: "nc-mail",
+    time: "8:31",
     app: "Mail",
     title: "Say hi",
     body: "Open to collabs, freelance, and interesting product problems.",
@@ -58,40 +56,20 @@ const ABOUT_POOL: Omit<StackNotification, "id" | "time">[] = [
       </span>
     ),
   },
-  {
-    app: "Notes",
-    title: "Random fact",
-    body: "Loves Mac-style UI details, clicky key sounds, and tiny mascots.",
-    icon: (
-      <span className="flex size-8 items-center justify-center rounded-lg bg-amber-500 text-white">
-        <NotebookPen className="size-4" />
-      </span>
-    ),
-  },
 ];
-
-function pickNotes(count = 4): StackNotification[] {
-  const shuffled = [...ABOUT_POOL].sort(() => Math.random() - 0.5);
-  const stamps = ["now", "2m", "9:50", "8:31"];
-  return shuffled.slice(0, count).map((note, i) => ({
-    ...note,
-    id: `nc-${i}-${Math.random().toString(36).slice(2, 7)}`,
-    time: stamps[i] ?? "earlier",
-  }));
-}
 
 type NotificationCentreProps = {
   open: boolean;
   onClose: () => void;
+  /** Live toast popovers absorbed into this panel when it opens */
+  absorbed?: StackNotification[];
 };
 
-export default function NotificationCentre({ open, onClose }: NotificationCentreProps) {
-  const [seed, setSeed] = useState(0);
-
-  useEffect(() => {
-    if (open) setSeed((n) => n + 1);
-  }, [open]);
-
+export default function NotificationCentre({
+  open,
+  onClose,
+  absorbed = [],
+}: NotificationCentreProps) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -101,7 +79,16 @@ export default function NotificationCentre({ open, onClose }: NotificationCentre
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  const notifications = useMemo(() => pickNotes(4), [seed]);
+  const notifications = useMemo(() => {
+    const seen = new Set<string>();
+    const merged: StackNotification[] = [];
+    for (const note of [...absorbed, ...BASE_NOTIFICATIONS]) {
+      if (seen.has(note.id)) continue;
+      seen.add(note.id);
+      merged.push(note);
+    }
+    return merged.slice(0, 6);
+  }, [absorbed]);
 
   return (
     <>
@@ -128,9 +115,9 @@ export default function NotificationCentre({ open, onClose }: NotificationCentre
           >
             <X className="size-3.5" />
           </button>
-          {seed > 0 ? (
+          {open ? (
             <NotificationStack
-              key={seed}
+              key={`nc-${absorbed.map((n) => n.id).join("|") || "base"}`}
               notifications={notifications}
               className="mac-nc__stack"
             />

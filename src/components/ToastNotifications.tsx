@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { playNotify } from "@/lib/uiSound";
 import { cn } from "@/lib/utils";
+import type { StackNotification } from "@/components/ui/notification-stack";
 
-type ToastNote = {
+export type ToastNote = {
   id: string;
   app: string;
   title: string;
@@ -18,49 +19,49 @@ const TOAST_POOL: Omit<ToastNote, "id">[] = [
   {
     app: "About Me",
     title: "Shivam Mittal",
-    body: "Builder · designer-minded engineer.",
+    body: "Product · GTM · Applied AI · Growth engineer.",
     icon: "/icons/dock/claude.png",
   },
   {
     app: "Projects",
-    title: "Fresh work dropped",
-    body: "Something new landed in Projects.",
+    title: "Desktop tip",
+    body: "Open the Projects folder on the right.",
     icon: "https://cdn.21st.dev/assets/mirror/99/9963f31f43cd77b0c28981ba7bac04db749a5749019f554d1afb75225a3e9151.png",
   },
   {
     app: "GitHub",
-    title: "Activity on shiavm006",
-    body: "New commits just showed up.",
+    title: "shiavm006",
+    body: "Public repos live on GitHub — dock icon opens them.",
     icon: "/icons/dock/github.png",
   },
   {
     app: "LinkedIn",
-    title: "Profile views",
-    body: "Someone checked your profile.",
+    title: "Connect",
+    body: "Say hi on LinkedIn via the dock.",
     icon: "/icons/dock/linkedin.png",
   },
   {
     app: "Mail",
-    title: "Say hi",
-    body: "Open to collabs and product work.",
+    title: "Collabs welcome",
+    body: "Gmail in the dock opens a mail draft.",
     icon: "/icons/dock/gmail.png",
   },
   {
     app: "Notes",
-    title: "Random fact",
+    title: "Craft note",
     body: "Loves Mac UI details and tiny mascots.",
     icon: "https://cdn.21st.dev/assets/mirror/cb/cbfa4e5db383bbb86683edc2f7d309e9fd7000d07833f6449837be51b77558fa.png",
   },
   {
-    app: "Spotify",
-    title: "Focus mode",
-    body: "Late-night coding playlist is on.",
-    icon: "/icons/dock/spotify.png",
+    app: "Spotlight",
+    title: "Quick tip",
+    body: "Press ⌘K to open Spotlight.",
+    icon: "/icons/dock/spotlight.png",
   },
   {
     app: "X",
     title: "@Shivammitt2312",
-    body: "A new thought just posted.",
+    body: "Thoughts and updates on X.",
     icon: "/icons/dock/x.png",
   },
 ];
@@ -73,19 +74,47 @@ function randomToast(): ToastNote {
   };
 }
 
+export function toastToStackNote(toast: ToastNote): StackNotification {
+  return {
+    id: toast.id,
+    app: toast.app,
+    title: toast.title,
+    body: toast.body,
+    time: "now",
+    icon: (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={toast.icon}
+        alt=""
+        width={32}
+        height={32}
+        className="size-8 rounded-lg object-contain bg-black/5 p-0.5"
+        draggable={false}
+      />
+    ),
+  };
+}
+
 type ToastNotificationsProps = {
   paused?: boolean;
   onOpenCentre?: () => void;
+  /** Called when centre opens — live toasts are handed off to live inside NC */
+  onAbsorbIntoCentre?: (notes: StackNotification[]) => void;
 };
 
 export default function ToastNotifications({
   paused = false,
   onOpenCentre,
+  onAbsorbIntoCentre,
 }: ToastNotificationsProps) {
   const [toasts, setToasts] = useState<ToastNote[]>([]);
+  const [absorbing, setAbsorbing] = useState(false);
   const timers = useRef<number[]>([]);
   const sounded = useRef(new Set<string>());
   const dismissTimers = useRef(new Map<string, number>());
+  const toastsRef = useRef(toasts);
+  toastsRef.current = toasts;
+  const wasPaused = useRef(paused);
 
   useEffect(() => {
     return () => {
@@ -94,7 +123,32 @@ export default function ToastNotifications({
     };
   }, []);
 
-  // Chime after the toast has started sliding in (not before it's visible).
+  // When Notification Centre opens, suck visible toasts into the panel.
+  useEffect(() => {
+    const justOpened = paused && !wasPaused.current;
+    wasPaused.current = paused;
+
+    if (!justOpened) {
+      if (!paused) setAbsorbing(false);
+      return;
+    }
+
+    const live = toastsRef.current.filter((t) => !t.leaving);
+    if (live.length === 0) {
+      setToasts([]);
+      return;
+    }
+
+    setAbsorbing(true);
+    onAbsorbIntoCentre?.(live.map(toastToStackNote));
+
+    const id = window.setTimeout(() => {
+      setToasts([]);
+      setAbsorbing(false);
+    }, 380);
+    timers.current.push(id);
+  }, [paused, onAbsorbIntoCentre]);
+
   useEffect(() => {
     for (const toast of toasts) {
       if (toast.leaving || sounded.current.has(toast.id)) continue;
@@ -161,7 +215,15 @@ export default function ToastNotifications({
   };
 
   return (
-    <div className="mac-toast-rail" aria-live="polite">
+    <div
+      className={cn(
+        "mac-toast-rail",
+        paused && "is-paused",
+        absorbing && "is-absorbing",
+      )}
+      aria-live="polite"
+      aria-hidden={paused || undefined}
+    >
       {toasts.map((toast) => (
         <article
           key={toast.id}
@@ -170,7 +232,6 @@ export default function ToastNotifications({
           data-ui-sound="click"
           onClick={() => {
             onOpenCentre?.();
-            dismissNow(toast.id);
           }}
         >
           <div className="mac-toast__icon">

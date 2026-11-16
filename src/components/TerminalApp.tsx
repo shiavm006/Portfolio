@@ -1,13 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import MacWindow from "@/components/MacWindow";
 
 type Line = { type: "in" | "out" | "sys"; text: string };
 
-const WELCOME: Line[] = [
-  { type: "sys", text: "Last login: Mon Nov 16 01:43:00 on ttys001" },
-  { type: "out", text: "shivam@portfolio ~ % type `help` for commands" },
-];
+function welcomeLines(): Line[] {
+  return [
+    {
+      type: "sys",
+      text: `Last login: ${new Date().toString()} on ttys001`,
+    },
+    { type: "out", text: "shivam@portfolio ~ % type `help` for commands" },
+  ];
+}
 
 function runCommand(raw: string): Line[] {
   const input = raw.trim();
@@ -35,7 +41,7 @@ function runCommand(raw: string): Line[] {
     return [
       {
         type: "out",
-        text: "Shivam Mittal — building products, design systems, and playful UIs.",
+        text: "Shivam Mittal — Product, GTM, Applied AI, and Growth engineer.",
       },
     ];
   }
@@ -43,7 +49,7 @@ function runCommand(raw: string): Line[] {
     return [
       {
         type: "out",
-        text: "portfolio  blinkmoney  experiments  — open the Projects folder for more.",
+        text: "portfolio  experiments  — open the Projects folder for more.",
       },
     ];
   }
@@ -58,27 +64,35 @@ function runCommand(raw: string): Line[] {
 
 type TerminalAppProps = {
   open: boolean;
+  minimized?: boolean;
+  zIndex?: number;
   onClose: () => void;
+  onMinimize?: () => void;
   onFocus?: () => void;
 };
 
-export default function TerminalApp({ open, onClose, onFocus }: TerminalAppProps) {
-  const [lines, setLines] = useState<Line[]>(WELCOME);
+export default function TerminalApp({
+  open,
+  minimized = false,
+  zIndex = 46,
+  onClose,
+  onMinimize,
+  onFocus,
+}: TerminalAppProps) {
+  const [lines, setLines] = useState<Line[]>(() => welcomeLines());
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || minimized) return;
     const id = window.setTimeout(() => inputRef.current?.focus(), 80);
     return () => window.clearTimeout(id);
-  }, [open]);
+  }, [open, minimized]);
 
   useEffect(() => {
     bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight });
   }, [lines]);
-
-  if (!open) return null;
 
   const submit = () => {
     const trimmed = value;
@@ -93,42 +107,29 @@ export default function TerminalApp({ open, onClose, onFocus }: TerminalAppProps
   };
 
   return (
-    <div
-      className="mac-terminal"
-      role="dialog"
-      aria-label="Terminal"
-      onMouseDown={onFocus}
+    <MacWindow
+      open={open}
+      minimized={minimized}
+      title="shivam — zsh — 80×24"
+      variant="dark"
+      width={720}
+      height={420}
+      zIndex={zIndex}
+      onClose={onClose}
+      onMinimize={onMinimize}
+      onFocus={onFocus}
+      bodyClassName="mac-window__body--terminal"
     >
-      <div className="mac-terminal__titlebar">
-        <div className="mac-terminal__traffic">
-          <button
-            type="button"
-            className="mac-terminal__dot mac-terminal__dot--close"
-            aria-label="Close"
-            onClick={onClose}
-          />
-          <button
-            type="button"
-            className="mac-terminal__dot mac-terminal__dot--min"
-            aria-label="Minimize"
-            onClick={onClose}
-          />
-          <button
-            type="button"
-            className="mac-terminal__dot mac-terminal__dot--zoom"
-            aria-label="Zoom"
-          />
-        </div>
-        <span className="mac-terminal__title">shivam — zsh — 80×24</span>
-      </div>
-
       <div
         ref={bodyRef}
-        className="mac-terminal__body"
+        className="mac-terminal__scroll"
         onClick={() => inputRef.current?.focus()}
       >
         {lines.map((line, i) => (
-          <div key={`${i}-${line.text.slice(0, 12)}`} className={`mac-terminal__line mac-terminal__line--${line.type}`}>
+          <div
+            key={`${i}-${line.text.slice(0, 12)}`}
+            className={`mac-terminal__line mac-terminal__line--${line.type}`}
+          >
             {line.text}
           </div>
         ))}
@@ -152,6 +153,6 @@ export default function TerminalApp({ open, onClose, onFocus }: TerminalAppProps
           />
         </div>
       </div>
-    </div>
+    </MacWindow>
   );
 }

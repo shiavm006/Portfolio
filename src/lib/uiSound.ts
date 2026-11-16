@@ -16,10 +16,64 @@ const FOLDER_SAMPLES = [
   "/sounds/folder/fold5.mp3",
 ] as const;
 
+const MUTE_KEY = "portfolio-ui-sound-muted";
+
 let ctx: AudioContext | null = null;
 let keyBuffers: AudioBuffer[] = [];
 let folderBuffers: AudioBuffer[] = [];
 let loading: Promise<void> | null = null;
+let muted = false;
+let muteHydrated = false;
+const muteListeners = new Set<(value: boolean) => void>();
+
+function readStoredMute() {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(MUTE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeStoredMute(value: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(MUTE_KEY, value ? "1" : "0");
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+function hydrateMute() {
+  if (muteHydrated || typeof window === "undefined") return;
+  muteHydrated = true;
+  muted = readStoredMute();
+}
+
+export function isUiSoundMuted() {
+  hydrateMute();
+  return muted;
+}
+
+export function setUiSoundMuted(value: boolean) {
+  hydrateMute();
+  if (muted === value) return;
+  muted = value;
+  writeStoredMute(value);
+  for (const listener of muteListeners) listener(value);
+}
+
+export function toggleUiSoundMuted() {
+  setUiSoundMuted(!isUiSoundMuted());
+  return muted;
+}
+
+export function subscribeUiSoundMuted(listener: (value: boolean) => void) {
+  muteListeners.add(listener);
+  return () => {
+    muteListeners.delete(listener);
+  };
+}
 
 function getCtx() {
   if (typeof window === "undefined") return null;
@@ -92,7 +146,10 @@ function ensureLoaded(then: () => void) {
 
 /** Cherry MX Blue — default UI / dock click. */
 export function playClick() {
+  hydrateMute();
+  if (muted) return;
   ensureLoaded(() => {
+    if (muted) return;
     playFrom(keyBuffers, {
       rate: 1.15,
       rateJitter: 0.2,
@@ -104,7 +161,10 @@ export function playClick() {
 
 /** Buckling-spring — deeper open sound for desktop folders. */
 export function playFolderClick() {
+  hydrateMute();
+  if (muted) return;
   ensureLoaded(() => {
+    if (muted) return;
     playFrom(folderBuffers, {
       rate: 0.92,
       rateJitter: 0.12,
@@ -116,6 +176,8 @@ export function playFolderClick() {
 
 /** Soft macOS-style two-tone notification chime (synth). */
 export function playNotify() {
+  hydrateMute();
+  if (muted) return;
   const audio = getCtx();
   if (!audio) return;
 
@@ -145,6 +207,7 @@ export function playNotify() {
 }
 
 export function initUiSound() {
+  hydrateMute();
   getCtx();
   loading ??= loadSamples().catch(() => {
     loading = null;

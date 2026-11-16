@@ -8,19 +8,23 @@ import SpotlightSearch, {
   type SpotlightItem,
 } from "@/components/SpotlightSearch";
 import TerminalApp from "@/components/TerminalApp";
+import NotesApp from "@/components/NotesApp";
+import NotionApp from "@/components/NotionApp";
+import SpotifyApp from "@/components/SpotifyApp";
 import ClaudeMascot from "@/components/ClaudeMascot";
 import NotificationCentre from "@/components/NotificationCentre";
 import ToastNotifications from "@/components/ToastNotifications";
+import FinderApp from "@/components/FinderApp";
+import IPhoneHome, { type IPhoneAppAction } from "@/components/IPhoneHome";
 import TextRotate from "@/components/ui/text-rotate";
+import type { StackNotification } from "@/components/ui/notification-stack";
 import { initUiSound, playClick, playFolderClick } from "@/lib/uiSound";
+import {
+  FOLDER_WINDOWS,
+  LINKS,
+  type FolderId,
+} from "@/lib/portfolioContent";
 import { LayoutGroup, motion } from "motion/react";
-
-const APP_LINKS: Record<string, string> = {
-  x: "https://x.com/Shivammitt2312",
-  github: "https://github.com/shiavm006",
-  linkedin: "https://www.linkedin.com/in/shivam-mittal-464a9031a/",
-  claude: "https://claude.ai/",
-};
 
 const DOCK_APPS = [
   {
@@ -81,8 +85,9 @@ const DOCK_APPS = [
   },
 ];
 
-const DESKTOP_FOLDERS = [
+const DESKTOP_FOLDERS: { id: FolderId; label: string }[] = [
   { id: "about", label: "About Me" },
+  { id: "experience", label: "Experience" },
   { id: "projects", label: "Projects" },
   { id: "skills", label: "Skills" },
   { id: "resume", label: "Resume" },
@@ -92,12 +97,97 @@ const APP_NAMES: Record<string, string> = Object.fromEntries(
   DOCK_APPS.map((app) => [app.id, app.name]),
 );
 
+const EXTERNAL_LINKS: Record<string, string> = {
+  x: LINKS.x,
+  github: LINKS.github,
+  linkedin: LINKS.linkedin,
+  claude: LINKS.claude,
+  gmail: LINKS.gmail,
+};
+
 export default function MacDesktop() {
   const [activeApp, setActiveApp] = useState("Finder");
   const [openApps, setOpenApps] = useState<string[]>(["finder"]);
   const [spotlightOpen, setSpotlightOpen] = useState(false);
   const [terminalOpen, setTerminalOpen] = useState(false);
+  const [terminalMinimized, setTerminalMinimized] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [notesMinimized, setNotesMinimized] = useState(false);
+  const [notionOpen, setNotionOpen] = useState(false);
+  const [notionMinimized, setNotionMinimized] = useState(false);
+  const [spotifyOpen, setSpotifyOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [absorbedToasts, setAbsorbedToasts] = useState<StackNotification[]>([]);
+  const [openFolder, setOpenFolder] = useState<FolderId | null>(null);
+  const [folderMinimized, setFolderMinimized] = useState(false);
+  const [folderZ, setFolderZ] = useState(45);
+  const [terminalZ, setTerminalZ] = useState(46);
+  const [notesZ, setNotesZ] = useState(47);
+  const [notionZ, setNotionZ] = useState(48);
+  const [topZ, setTopZ] = useState(48);
+
+  const bumpZ = () => {
+    const next = topZ + 1;
+    setTopZ(next);
+    return next;
+  };
+
+  const focusFolder = (id?: FolderId | null) => {
+    setFolderZ(bumpZ());
+    const key =
+      typeof id === "string" && id in FOLDER_WINDOWS ? id : openFolder;
+    const win = key ? FOLDER_WINDOWS[key] : undefined;
+    if (win) setActiveApp(win.title);
+  };
+
+  const focusTerminal = () => {
+    setTerminalZ(bumpZ());
+    setActiveApp("Terminal");
+  };
+
+  const focusNotes = () => {
+    setNotesZ(bumpZ());
+    setActiveApp("Notes");
+  };
+
+  const focusNotion = () => {
+    setNotionZ(bumpZ());
+    setActiveApp("Notion");
+  };
+
+  const openNotesWindow = () => {
+    markOpen("notes");
+    setNotesOpen(true);
+    setNotesMinimized(false);
+    focusNotes();
+  };
+
+  const openNotionWindow = () => {
+    markOpen("notion");
+    setNotionOpen(true);
+    setNotionMinimized(false);
+    focusNotion();
+  };
+
+  const closeNotes = () => {
+    setNotesOpen(false);
+    setNotesMinimized(false);
+    setOpenApps((prev) => prev.filter((id) => id !== "notes"));
+    setActiveApp("Finder");
+  };
+
+  const closeNotion = () => {
+    setNotionOpen(false);
+    setNotionMinimized(false);
+    setOpenApps((prev) => prev.filter((id) => id !== "notion"));
+    setActiveApp("Finder");
+  };
+
+  const closeSpotify = () => {
+    setSpotifyOpen(false);
+    setOpenApps((prev) => prev.filter((id) => id !== "spotify"));
+    setActiveApp("Finder");
+  };
 
   const spotlightItems = useMemo<SpotlightItem[]>(() => {
     const apps = DOCK_APPS.filter((app) => !app.separator).map((app) => ({
@@ -122,8 +212,7 @@ export default function MacDesktop() {
 
     const onKeyDown = (e: KeyboardEvent) => {
       const meta = e.metaKey || e.ctrlKey;
-      // ⌘K always works in browser; ⌘Space may be taken by system Spotlight
-      if (meta && (e.key === "k" || e.key === "K" || e.code === "Space")) {
+      if (meta && (e.key === "k" || e.key === "K")) {
         e.preventDefault();
         setNotificationsOpen(false);
         setSpotlightOpen((open) => !open);
@@ -135,18 +224,15 @@ export default function MacDesktop() {
 
   useEffect(() => {
     const onPointerDown = (e: PointerEvent) => {
-      // Only primary button / touch
       if (e.pointerType === "mouse" && e.button !== 0) return;
       const target = e.target as Element | null;
       if (!target?.closest) return;
 
-      // Folders get their own sound
       if (target.closest('[data-ui-sound="folder"]')) {
         playFolderClick();
         return;
       }
 
-      // Only real controls — not empty desktop / wallpaper
       const clickable = target.closest(
         'button, a, [role="button"], [data-ui-sound], .mac-dock [title], .mac-menubar-wrap .cursor-pointer',
       );
@@ -157,28 +243,93 @@ export default function MacDesktop() {
     return () => window.removeEventListener("pointerdown", onPointerDown, true);
   }, []);
 
-  const openApp = (appId: string) => {
-    setActiveApp(APP_NAMES[appId] ?? "Finder");
+  const markOpen = (appId: string, label?: string) => {
+    setActiveApp(label ?? APP_NAMES[appId] ?? "Finder");
     setOpenApps((prev) => (prev.includes(appId) ? prev : [...prev, appId]));
+  };
+
+  const openFolderWindow = (id: FolderId) => {
+    // Re-clicking the same open folder just focuses / unminimizes it
+    if (openFolder === id) {
+      setFolderMinimized(false);
+      focusFolder(id);
+      return;
+    }
+    setOpenFolder(id);
+    setFolderMinimized(false);
+    markOpen("finder", FOLDER_WINDOWS[id].title);
+    focusFolder(id);
+  };
+
+  const closeFolderWindow = () => {
+    setOpenFolder(null);
+    setFolderMinimized(false);
+    setActiveApp("Finder");
+  };
+
+  const openApp = (appId: string) => {
+    if (appId === "dock-separator") return;
 
     if (appId === "terminal") {
+      markOpen("terminal");
       setTerminalOpen(true);
+      setTerminalMinimized(false);
+      focusTerminal();
       return;
     }
 
-    const link = APP_LINKS[appId];
-    if (link) window.open(link, "_blank", "noopener,noreferrer");
+    if (appId === "finder") {
+      if (openFolder && folderMinimized) {
+        setFolderMinimized(false);
+        focusFolder();
+        return;
+      }
+      openFolderWindow("about");
+      return;
+    }
+
+    if (appId === "notes") {
+      if (notesOpen && notesMinimized) {
+        setNotesMinimized(false);
+        focusNotes();
+        return;
+      }
+      openNotesWindow();
+      return;
+    }
+
+    if (appId === "notion") {
+      if (notionOpen && notionMinimized) {
+        setNotionMinimized(false);
+        focusNotion();
+        return;
+      }
+      openNotionWindow();
+      return;
+    }
+
+    if (appId === "spotify") {
+      if (spotifyOpen) {
+        closeSpotify();
+        return;
+      }
+      markOpen("spotify");
+      setSpotifyOpen(true);
+      return;
+    }
+
+    const link = EXTERNAL_LINKS[appId];
+    if (link) {
+      markOpen(appId);
+      window.open(link, "_blank", "noopener,noreferrer");
+    }
   };
 
   const closeTerminal = () => {
     setTerminalOpen(false);
+    setTerminalMinimized(false);
     setOpenApps((prev) => prev.filter((id) => id !== "terminal"));
     setActiveApp("Finder");
-  };
-
-  const handleAppClick = (appId: string) => {
-    if (appId === "dock-separator") return;
-    openApp(appId);
   };
 
   const handleSpotlightSelect = (item: SpotlightItem) => {
@@ -186,7 +337,12 @@ export default function MacDesktop() {
       openApp(item.id);
       return;
     }
-    setActiveApp(item.name);
+    const folderId = item.id.replace(/^folder-/, "") as FolderId;
+    if (folderId === "notes") {
+      openNotesWindow();
+      return;
+    }
+    if (folderId in FOLDER_WINDOWS) openFolderWindow(folderId);
   };
 
   const handleMenuAction = (action: string) => {
@@ -196,43 +352,61 @@ export default function MacDesktop() {
       action === "open-location"
     ) {
       setSpotlightOpen(true);
+      return;
     }
+    if (action === "about") {
+      openFolderWindow("about");
+      return;
+    }
+    if (action === "new-finder") {
+      openFolderWindow("projects");
+    }
+  };
+
+  const handleIPhoneOpen = (action: IPhoneAppAction) => {
+    if (action.type === "folder") {
+      openFolderWindow(action.id);
+      return;
+    }
+    openApp(action.id);
   };
 
   return (
     <div className="mac-desktop" aria-label="macOS desktop">
       <div className="mac-desktop__wallpaper" aria-hidden />
 
-      <header className="mac-menubar-wrap">
+      <header className="mac-menubar-wrap mac-desktop-only">
         <MacOSMenuBar
           appName={activeApp}
           onMenuAction={handleMenuAction}
           clockActive={notificationsOpen}
-          notificationCount={5}
+          notificationCount={4 + absorbedToasts.length}
           onClockClick={() => setNotificationsOpen((v) => !v)}
         />
       </header>
 
-      <div className="mac-desktop__icons">
+      <div className="mac-desktop__icons mac-desktop-only">
         {DESKTOP_FOLDERS.map((folder) => (
           <Folder
             key={folder.id}
             label={folder.label}
-            onOpenChange={(open) => {
-              if (open) setActiveApp(folder.label);
-            }}
+            onOpen={() => openFolderWindow(folder.id)}
           />
         ))}
       </div>
 
-      <div className="mac-desktop__hero" aria-label="Product engineer">
+      <div
+        className="mac-desktop__hero mac-desktop-only"
+        aria-label="Product engineer"
+      >
         <LayoutGroup>
-          <motion.p
+          <motion.div
             className="mac-desktop__hero-line"
             layout
             transition={{ type: "spring", damping: 30, stiffness: 400 }}
           >
             <TextRotate
+              as="span"
               texts={["Product", "GTM", "Applied AI", "Growth"]}
               mainClassName="mac-desktop__hero-rotate"
               staggerFrom="last"
@@ -251,27 +425,82 @@ export default function MacDesktop() {
             >
               engineer
             </motion.span>
-          </motion.p>
+          </motion.div>
         </LayoutGroup>
       </div>
 
-      <ClaudeMascot onClick={() => openApp("claude")} />
+      <div className="mac-desktop-only">
+        <ClaudeMascot onClick={() => openApp("claude")} />
+      </div>
+
+      <IPhoneHome
+        onOpen={handleIPhoneOpen}
+        onStatusTap={() => setNotificationsOpen(true)}
+      />
 
       <ToastNotifications
-        paused={notificationsOpen || spotlightOpen || terminalOpen}
+        paused={
+          notificationsOpen ||
+          spotlightOpen ||
+          terminalOpen ||
+          notesOpen ||
+          notionOpen
+        }
         onOpenCentre={() => setNotificationsOpen(true)}
+        onAbsorbIntoCentre={(notes) => setAbsorbedToasts(notes)}
       />
 
       <NotificationCentre
         open={notificationsOpen}
-        onClose={() => setNotificationsOpen(false)}
+        absorbed={absorbedToasts}
+        onClose={() => {
+          setNotificationsOpen(false);
+          setAbsorbedToasts([]);
+        }}
+      />
+
+      <FinderApp
+        open={!!openFolder}
+        initialSection={openFolder ?? "about"}
+        minimized={folderMinimized}
+        zIndex={folderZ}
+        onClose={closeFolderWindow}
+        onMinimize={() => setFolderMinimized(true)}
+        onFocus={() => focusFolder()}
+        onSectionChange={(id) => {
+          setOpenFolder(id);
+          focusFolder(id);
+        }}
       />
 
       <TerminalApp
         open={terminalOpen}
+        minimized={terminalMinimized}
+        zIndex={terminalZ}
         onClose={closeTerminal}
-        onFocus={() => setActiveApp("Terminal")}
+        onMinimize={() => setTerminalMinimized(true)}
+        onFocus={focusTerminal}
       />
+
+      <NotesApp
+        open={notesOpen}
+        minimized={notesMinimized}
+        zIndex={notesZ}
+        onClose={closeNotes}
+        onMinimize={() => setNotesMinimized(true)}
+        onFocus={focusNotes}
+      />
+
+      <NotionApp
+        open={notionOpen}
+        minimized={notionMinimized}
+        zIndex={notionZ}
+        onClose={closeNotion}
+        onMinimize={() => setNotionMinimized(true)}
+        onFocus={focusNotion}
+      />
+
+      <SpotifyApp open={spotifyOpen} onClose={closeSpotify} />
 
       <SpotlightSearch
         open={spotlightOpen}
@@ -280,10 +509,10 @@ export default function MacDesktop() {
         onSelect={handleSpotlightSelect}
       />
 
-      <nav className="mac-dock" aria-label="Dock">
+      <nav className="mac-dock mac-desktop-only" aria-label="Dock">
         <MacOSDock
           apps={DOCK_APPS}
-          onAppClick={handleAppClick}
+          onAppClick={openApp}
           openApps={openApps}
         />
       </nav>

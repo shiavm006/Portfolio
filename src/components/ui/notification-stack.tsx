@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/purity, react-hooks/refs */
+
 /**
  * @author: @dorianbaffier
  * @description: Notification Stack
