@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  // cacheComponents + partialPrefetching hang/500 on Cloudflare Workers
+  // (Error 1101) — keep off until OpenNext workerd support is solid.
   turbopack: {
     rules: {
       "*.css": {
@@ -15,3 +14,6 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+initOpenNextCloudflareForDev();
