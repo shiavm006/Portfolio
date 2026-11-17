@@ -9,6 +9,7 @@ import SpotlightSearch, {
 } from "@/components/SpotlightSearch";
 import NotesApp from "@/components/NotesApp";
 import NotionApp from "@/components/NotionApp";
+import MailApp from "@/components/MailApp";
 import SpotifyApp from "@/components/SpotifyApp";
 import ClaudeMascot from "@/components/ClaudeMascot";
 import NotificationCentre from "@/components/NotificationCentre";
@@ -97,7 +98,6 @@ const EXTERNAL_LINKS: Record<string, string> = {
   github: LINKS.github,
   linkedin: LINKS.linkedin,
   claude: LINKS.claude,
-  gmail: LINKS.gmail,
 };
 
 export default function MacDesktop() {
@@ -108,6 +108,9 @@ export default function MacDesktop() {
   const [notesMinimized, setNotesMinimized] = useState(false);
   const [notionOpen, setNotionOpen] = useState(false);
   const [notionMinimized, setNotionMinimized] = useState(false);
+  const [mailOpen, setMailOpen] = useState(false);
+  const [mailMinimized, setMailMinimized] = useState(false);
+  const [mailZ, setMailZ] = useState(49);
   const [spotifyOpen, setSpotifyOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [absorbedToasts, setAbsorbedToasts] = useState<StackNotification[]>([]);
@@ -140,6 +143,18 @@ export default function MacDesktop() {
   const focusNotion = () => {
     setNotionZ(bumpZ());
     setActiveApp("Notion");
+  };
+
+  const focusMail = () => {
+    setMailZ(bumpZ());
+    setActiveApp("Gmail");
+  };
+
+  const closeMail = () => {
+    setMailOpen(false);
+    setMailMinimized(false);
+    setOpenApps((prev) => prev.filter((id) => id !== "gmail"));
+    setActiveApp("Finder");
   };
 
   const openNotesWindow = () => {
@@ -284,6 +299,14 @@ export default function MacDesktop() {
         return;
       }
       openNotionWindow();
+      return;
+    }
+
+    if (appId === "gmail") {
+      markOpen("gmail");
+      setMailOpen(true);
+      setMailMinimized(false);
+      focusMail();
       return;
     }
 
@@ -470,6 +493,15 @@ export default function MacDesktop() {
         onClose={closeNotion}
         onMinimize={() => setNotionMinimized(true)}
         onFocus={focusNotion}
+      />
+
+      <MailApp
+        open={mailOpen}
+        minimized={mailMinimized}
+        zIndex={mailZ}
+        onClose={closeMail}
+        onMinimize={() => setMailMinimized(true)}
+        onFocus={focusMail}
       />
 
       <SpotifyApp open={spotifyOpen} onClose={closeSpotify} />
