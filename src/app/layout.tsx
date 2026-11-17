@@ -15,15 +15,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://github.com/shiavm006/Portfolio"),
   title: {
-    default: "Shivam Mittal — Portfolio",
+    default: "Shivam Mittal",
     template: "%s · Shivam Mittal",
   },
   description:
-    "Interactive macOS-style portfolio by Shivam Mittal — Product, GTM, Applied AI, and Growth engineer.",
+    "Trains my taste on AI systems, tests it on real users. Product-minded, GTM-curious, mildly allergic to hype.",
   openGraph: {
-    title: "Shivam Mittal — Portfolio",
+    title: "Shivam Mittal ",
     description:
-      "Interactive macOS-style portfolio — Product, GTM, Applied AI, and Growth engineer.",
+      "Trains my taste on AI systems, tests it on real users. Product-minded, GTM-curious, mildly allergic to hype.",
     type: "website",
     locale: "en_US",
   },
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Shivam Mittal — Portfolio",
     description:
-      "Interactive macOS-style portfolio — Product, GTM, Applied AI, and Growth engineer.",
+      "Trains my taste on AI systems, tests it on real users. Product-minded, GTM-curious, mildly allergic to hype.",
   },
   authors: [{ name: "Shivam Mittal" }],
 };
