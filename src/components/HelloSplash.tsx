@@ -212,6 +212,34 @@ export default function HelloSplash({ onComplete }: HelloSplashProps) {
         </div>
         <SplashFlagClaude />
       </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/images/chess-king.png"
+        alt=""
+        aria-hidden="true"
+        className="hello-splash__chess"
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/images/headphones.png"
+        alt=""
+        aria-hidden="true"
+        className="hello-splash__headphones"
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/images/bmw.png"
+        alt=""
+        aria-hidden="true"
+        className="hello-splash__car"
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/images/hikers.png"
+        alt=""
+        aria-hidden="true"
+        className="hello-splash__hikers"
+      />
     </div>
   );
 }

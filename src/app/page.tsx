@@ -63,17 +63,6 @@ export default function Home() {
           role="presentation"
         >
           <HelloSplash onComplete={onHelloComplete} />
-          <button
-            type="button"
-            className="splash-skip"
-            data-ui-sound="click"
-            onClick={(e) => {
-              e.stopPropagation();
-              goToDesktop();
-            }}
-          >
-            Skip intro
-          </button>
         </div>
       ) : null}
     </main>
