@@ -32,8 +32,21 @@ const DEFAULT_CONFIG: DockConfig = {
   effectWidth: 240,
 };
 
-function getResponsiveConfig(): DockConfig {
+function getResponsiveConfig(apps: DockApp[]): DockConfig {
   if (typeof window === "undefined") return DEFAULT_CONFIG;
+
+  // Phones: size icons so the whole dock fits the screen width.
+  if (window.innerWidth <= 720) {
+    const separators = apps.filter((a) => a.separator).length;
+    const icons = apps.length - separators;
+    const units =
+      icons + 0.08 * (apps.length - 1) + 0.18 * separators + 0.24 + 0.2;
+    const size = Math.max(
+      30,
+      Math.min(52, Math.floor((window.innerWidth - 16) / units)),
+    );
+    return { baseIconSize: size, maxScale: 1.1, effectWidth: size * 2 };
+  }
 
   const smallerDimension = Math.min(window.innerWidth, window.innerHeight);
 
@@ -157,11 +170,11 @@ const MacOSDock: React.FC<MacOSDockProps> = ({
   }, [apps, restPositions]);
 
   useEffect(() => {
-    const handleResize = () => setConfig(getResponsiveConfig());
+    const handleResize = () => setConfig(getResponsiveConfig(apps));
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [apps]);
 
   const paint = useCallback(() => {
     const {

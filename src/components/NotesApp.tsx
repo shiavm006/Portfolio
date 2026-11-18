@@ -28,7 +28,7 @@ const NOTES: Note[] = [
     id: "tips",
     title: "Desktop tips",
     preview: "⌘K Spotlight · clock opens Notification Centre",
-    body: "⌘K opens Spotlight.\nClick the clock for Notification Centre.\nFolders on the right open Finder windows.\nDock Notes opens this app.",
+    body: "⌘K opens Spotlight.\nClick the clock for Notification Centre.\nFolders on the left open section windows.\nDock Notes opens this app.",
     date: "Yesterday",
   },
   {
@@ -44,6 +44,11 @@ type NotesAppProps = {
   open: boolean;
   minimized?: boolean;
   zIndex?: number;
+  /** Optional starting frame (used for the landing layout) */
+  initialPosition?: { x: number; y: number };
+  width?: number;
+  height?: number;
+  focused?: boolean;
   onClose: () => void;
   onMinimize?: () => void;
   onFocus?: () => void;
@@ -76,6 +81,10 @@ export default function NotesApp({
   open,
   minimized = false,
   zIndex = 47,
+  initialPosition,
+  width = 820,
+  height = 520,
+  focused = true,
   onClose,
   onMinimize,
   onFocus,
@@ -102,8 +111,10 @@ export default function NotesApp({
       minimized={minimized}
       title="Notes"
       variant="light"
-      width={820}
-      height={520}
+      width={width}
+      height={height}
+      initialPosition={initialPosition}
+      focused={focused}
       zIndex={zIndex}
       onClose={onClose}
       onMinimize={onMinimize}

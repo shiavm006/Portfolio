@@ -84,7 +84,7 @@ const PAGES: NotionPage[] = [
     content: (go) => (
       <>
         <p className="mac-notion__lead">
-          Finder is the quick map. This space is where the work is written up —
+          The section windows are the quick map. This space is where the work is written up —
           projects, case studies, and short essays on product, GTM, and applied
           AI.
         </p>
@@ -163,7 +163,7 @@ const PAGES: NotionPage[] = [
     content: () => (
       <>
         <p className="mac-notion__lead">
-          A desktop you can use: dock, Spotlight, Finder, Notes, Notion,
+          A desktop you can use: dock, Spotlight, section windows, Notes, Notion,
           notifications — plus an iPhone home on mobile.
         </p>
         <Callout icon="🎯" title="Goal">
@@ -248,7 +248,7 @@ const PAGES: NotionPage[] = [
       <>
         <p className="mac-notion__lead">
           Turning a personal site into a macOS desktop — dock, Spotlight,
-          Finder, Notes, Notion — without making it a gimmick.
+          section windows, Notes, Notion — without making it a gimmick.
         </p>
         <h3 className="mac-notion__h3">Problem</h3>
         <p>

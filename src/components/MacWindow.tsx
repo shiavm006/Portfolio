@@ -45,6 +45,14 @@ export type MacWindowProps = {
   bodyClassName?: string;
   /** default = titlebar chrome; none = child supplies unified chrome (Finder) */
   chrome?: "default" | "none";
+  /** Minimum width while resizing (default 360) */
+  minWidth?: number;
+  /** Minimum height while resizing (default 240) */
+  minHeight?: number;
+  /** Start here instead of centering (desktop only) */
+  initialPosition?: { x: number; y: number };
+  /** false renders the window as inactive (default true) */
+  focused?: boolean;
   onClose: () => void;
   onMinimize?: () => void;
   onFocus?: () => void;
@@ -84,6 +92,10 @@ export default function MacWindow({
   className,
   bodyClassName,
   chrome = "default",
+  minWidth = MIN_W,
+  minHeight = MIN_H,
+  initialPosition,
+  focused = true,
   onClose,
   onMinimize,
   onFocus,
@@ -115,6 +127,12 @@ export default function MacWindow({
   const [dragging, setDragging] = useState(false);
   const [resizing, setResizing] = useState(false);
   const centeredFor = useRef<string | null>(null);
+  const minRef = useRef({ w: minWidth, h: minHeight });
+  const initialPosRef = useRef(initialPosition);
+  useEffect(() => {
+    minRef.current = { w: minWidth, h: minHeight };
+    initialPosRef.current = initialPosition;
+  });
 
   const applyFrame = useCallback((nextPos: Point, nextSize: Size) => {
     posRef.current = nextPos;
@@ -172,16 +190,19 @@ export default function MacWindow({
 
     const w = Math.min(width, vw - 32);
     const h = Math.min(height, vh - 140);
-    const next = {
-      x: Math.round((vw - w) / 2),
-      y: Math.max(44, Math.round((vh - h) / 2 - 20)),
-    };
+    const start = initialPosRef.current;
+    const next = start
+      ? clampPos(start.x, start.y, w, h)
+      : {
+          x: Math.round((vw - w) / 2),
+          y: Math.max(44, Math.round((vh - h) / 2 - 20)),
+        };
     posRef.current = next;
     sizeRef.current = { w, h };
     setPos(next);
     setSize({ w, h });
     setReady(true);
-  }, [open, title, reactId, width, height]);
+  }, [open, title, reactId, width, height, clampPos]);
 
   // Document-level drag + resize listeners
   useEffect(() => {
@@ -225,27 +246,29 @@ export default function MacWindow({
 
       const maxW = window.innerWidth - 16;
       const maxH = window.innerHeight - 44;
+      const minW = minRef.current.w;
+      const minH = minRef.current.h;
 
       if (edge.includes("w")) {
-        const maxGrowLeft = resize.startLeft + resize.startW - MIN_W;
+        const maxGrowLeft = resize.startLeft + resize.startW - minW;
         left = Math.min(Math.max(8, left), maxGrowLeft);
         w = resize.startLeft + resize.startW - left;
       } else {
-        w = Math.min(Math.max(MIN_W, w), maxW);
+        w = Math.min(Math.max(minW, w), maxW);
         left = Math.min(left, window.innerWidth - w - 8);
       }
 
       if (edge.includes("n")) {
-        const maxGrowTop = resize.startTop + resize.startH - MIN_H;
+        const maxGrowTop = resize.startTop + resize.startH - minH;
         top = Math.min(Math.max(36, top), maxGrowTop);
         h = resize.startTop + resize.startH - top;
       } else {
-        h = Math.min(Math.max(MIN_H, h), maxH);
+        h = Math.min(Math.max(minH, h), maxH);
         top = Math.min(top, window.innerHeight - Math.min(h, maxH) - 8);
       }
 
-      w = Math.min(Math.max(MIN_W, w), maxW);
-      h = Math.min(Math.max(MIN_H, h), maxH);
+      w = Math.min(Math.max(minW, w), maxW);
+      h = Math.min(Math.max(minH, h), maxH);
 
       applyFrame({ x: left, y: top }, { w: Math.round(w), h: Math.round(h) });
     };
@@ -360,6 +383,7 @@ export default function MacWindow({
           chrome === "none" && "mac-window--chrome-none",
           zoomed && "is-zoomed",
           minimized && "is-minimized",
+          !focused && "is-inactive",
           dragging && "is-dragging",
           resizing && "is-resizing",
           className,

@@ -320,7 +320,7 @@ export interface MacOSMenuBarProps {
 }
 
 const MacOSMenuBar: React.FC<MacOSMenuBarProps> = ({
-  appName = "Finder",
+  appName = "Portfolio",
   menus = DEFAULT_MENUS,
   onMenuAction,
   onClockClick,

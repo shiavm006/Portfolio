@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import Folder from "@/components/ui/folder";
 import MacOSDock from "@/components/ui/mac-os-dock";
 import MacOSMenuBar from "@/components/ui/mac-os-menu-bar";
@@ -14,25 +14,31 @@ import SpotifyApp from "@/components/SpotifyApp";
 import ClaudeMascot from "@/components/ClaudeMascot";
 import NotificationCentre from "@/components/NotificationCentre";
 import ToastNotifications from "@/components/ToastNotifications";
-import FinderApp from "@/components/FinderApp";
-import IPhoneHome, { type IPhoneAppAction } from "@/components/IPhoneHome";
+import SectionWindow from "@/components/SectionWindow";
 import { AnnotatedText } from "@/components/ui/annotated-text";
 import TextRotate from "@/components/ui/text-rotate";
 import type { StackNotification } from "@/components/ui/notification-stack";
 import { initUiSound, playClick, playFolderClick } from "@/lib/uiSound";
+import { LINKS, type FolderId } from "@/lib/portfolioContent";
 import {
-  FOLDER_WINDOWS,
-  LINKS,
-  type FolderId,
-} from "@/lib/portfolioContent";
+  SECTIONS,
+  SECTION_IDS,
+  getSection,
+  type SectionId,
+} from "@/lib/sectionContent";
+import { SECTION_ICON_SRC } from "@/components/finder/FinderIcons";
+import { resolveFolderTarget, resolveMenuAction } from "@/lib/entryPoints";
+import {
+  DEFAULT_APP_NAME,
+  initialState,
+  reducer,
+  topVisible,
+  type Point,
+} from "@/lib/windowManager";
 import { LayoutGroup, motion } from "motion/react";
+import { cn } from "@/lib/utils";
 
 const DOCK_APPS = [
-  {
-    id: "finder",
-    name: "Finder",
-    icon: "https://cdn.21st.dev/assets/mirror/99/9963f31f43cd77b0c28981ba7bac04db749a5749019f554d1afb75225a3e9151.png",
-  },
   {
     id: "notes",
     name: "Notes",
@@ -81,13 +87,63 @@ const DOCK_APPS = [
   },
 ];
 
-const DESKTOP_FOLDERS: { id: FolderId; label: string }[] = [
-  { id: "about", label: "About Me" },
-  { id: "experience", label: "Experience" },
-  { id: "projects", label: "Projects" },
-  { id: "skills", label: "Skills" },
-  { id: "resume", label: "Resume" },
-];
+const DESKTOP_FOLDERS: { id: SectionId; label: string }[] = SECTIONS.map(
+  (section) => ({ id: section.id, label: section.name }),
+);
+
+const INITIAL_Z = 49;
+
+type Frame = { x: number; y: number; w: number; h: number };
+
+/**
+ * Where About Me (Notes) and Experience sit when the desktop first loads.
+ * Keeps clear of the folder column on the left and the dock at the bottom,
+ * puts Notes top-right and Experience lower-left, and only overlaps them
+ * when the screen is too narrow to fit both side by side.
+ * Returns null on phones, where windows open full-screen instead.
+ */
+function computeLanding(): { notes: Frame; experience: Frame } | null {
+  if (typeof window === "undefined") return null;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  if (vw <= 720 || vh < 560) return null;
+
+  const clamp = (v: number, lo: number, hi: number) =>
+    Math.max(lo, Math.min(hi, Math.round(v)));
+
+  const left = 140; // clear of the desktop folder column
+  const right = vw - 16;
+  const top = 44; // just under the menu bar
+  const bottom = vh - 108; // clear of the dock
+  const areaW = right - left;
+  const areaH = bottom - top;
+  const gap = 20;
+
+  const notesW = clamp(areaW * 0.42, 420, 620);
+  const notesH = clamp(areaH * 0.62, 320, 500);
+
+  const sideBySide = areaW - notesW - gap >= 560;
+  const expW = sideBySide
+    ? clamp(areaW - notesW - gap, 560, 900)
+    : clamp(areaW * 0.62, 520, 900);
+  const expY = top + (sideBySide ? 28 : Math.min(140, Math.round(areaH * 0.22)));
+  const expH = Math.max(320, bottom - expY);
+
+  return {
+    notes: { x: right - notesW, y: top, w: notesW, h: notesH },
+    experience: { x: left, y: expY, w: expW, h: expH },
+  };
+}
+
+/** Where a newly opened section window starts (before cascade offset). */
+function computeBase(): Point {
+  if (typeof window === "undefined") return { x: 120, y: 70 };
+  const w = Math.min(760, window.innerWidth - 32);
+  return {
+    x: Math.max(12, Math.round((window.innerWidth - w) / 2) - 60),
+    y: 70,
+  };
+}
 
 const APP_NAMES: Record<string, string> = Object.fromEntries(
   DOCK_APPS.map((app) => [app.id, app.name]),
@@ -101,8 +157,21 @@ const EXTERNAL_LINKS: Record<string, string> = {
 };
 
 export default function MacDesktop() {
-  const [activeApp, setActiveApp] = useState("Finder");
-  const [openApps, setOpenApps] = useState<string[]>(["finder"]);
+  const zRef = useRef(INITIAL_Z);
+  const nextZ = () => {
+    zRef.current += 1;
+    return zRef.current;
+  };
+  // Landing layout: About Me (Notes) and Experience open on arrival.
+  const [landing] = useState(computeLanding);
+  const [wm, dispatch] = useReducer(reducer, undefined, () =>
+    initialState(INITIAL_Z, computeBase()),
+  );
+  // Set once the visitor opens anything, so the timed landing never
+  // pops windows over something they chose themselves.
+  const userOpenedRef = useRef(false);
+  const [activeApp, setActiveApp] = useState(DEFAULT_APP_NAME);
+  const [openApps, setOpenApps] = useState<string[]>([]);
   const [spotlightOpen, setSpotlightOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [notesMinimized, setNotesMinimized] = useState(false);
@@ -114,39 +183,62 @@ export default function MacDesktop() {
   const [spotifyOpen, setSpotifyOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [absorbedToasts, setAbsorbedToasts] = useState<StackNotification[]>([]);
-  const [openFolder, setOpenFolder] = useState<FolderId | null>(null);
-  const [folderMinimized, setFolderMinimized] = useState(false);
-  const [folderZ, setFolderZ] = useState(45);
-  const [notesZ, setNotesZ] = useState(47);
+  const [notesZ, setNotesZ] = useState(INITIAL_Z);
   const [notionZ, setNotionZ] = useState(48);
-  const [topZ, setTopZ] = useState(48);
 
-  const bumpZ = () => {
-    const next = topZ + 1;
-    setTopZ(next);
-    return next;
+  /** After a non-section app closes, hand focus back to the top section window. */
+  const refocusSections = () => {
+    const top = topVisible(wm);
+    if (top) {
+      dispatch({ type: "focus", id: top, z: nextZ() });
+      setActiveApp(getSection(top).name);
+    } else {
+      setActiveApp(DEFAULT_APP_NAME);
+    }
   };
 
-  const focusFolder = (id?: FolderId | null) => {
-    setFolderZ(bumpZ());
-    const key =
-      typeof id === "string" && id in FOLDER_WINDOWS ? id : openFolder;
-    const win = key ? FOLDER_WINDOWS[key] : undefined;
-    if (win) setActiveApp(win.title);
+  const openSection = (id: SectionId) => {
+    userOpenedRef.current = true;
+    dispatch({ type: "open", id, z: nextZ(), base: computeBase() });
+    setActiveApp(getSection(id).name);
+  };
+
+  const focusSection = (id: SectionId) => {
+    dispatch({ type: "focus", id, z: nextZ() });
+    setActiveApp(getSection(id).name);
+  };
+
+  const minimizeSection = (id: SectionId) => {
+    const next = reducer(wm, { type: "minimize", id });
+    dispatch({ type: "minimize", id });
+    setActiveApp(
+      next.focused ? getSection(next.focused).name : DEFAULT_APP_NAME,
+    );
+  };
+
+  const closeSection = (id: SectionId) => {
+    const next = reducer(wm, { type: "close", id });
+    dispatch({ type: "close", id });
+    setActiveApp(
+      next.focused ? getSection(next.focused).name : DEFAULT_APP_NAME,
+    );
   };
 
   const focusNotes = () => {
-    setNotesZ(bumpZ());
+    setNotesZ(nextZ());
+    dispatch({ type: "blur" });
     setActiveApp("Notes");
   };
 
   const focusNotion = () => {
-    setNotionZ(bumpZ());
+    setNotionZ(nextZ());
+    dispatch({ type: "blur" });
     setActiveApp("Notion");
   };
 
   const focusMail = () => {
-    setMailZ(bumpZ());
+    setMailZ(nextZ());
+    dispatch({ type: "blur" });
     setActiveApp("Gmail");
   };
 
@@ -154,7 +246,7 @@ export default function MacDesktop() {
     setMailOpen(false);
     setMailMinimized(false);
     setOpenApps((prev) => prev.filter((id) => id !== "gmail"));
-    setActiveApp("Finder");
+    refocusSections();
   };
 
   const openNotesWindow = () => {
@@ -175,20 +267,20 @@ export default function MacDesktop() {
     setNotesOpen(false);
     setNotesMinimized(false);
     setOpenApps((prev) => prev.filter((id) => id !== "notes"));
-    setActiveApp("Finder");
+    refocusSections();
   };
 
   const closeNotion = () => {
     setNotionOpen(false);
     setNotionMinimized(false);
     setOpenApps((prev) => prev.filter((id) => id !== "notion"));
-    setActiveApp("Finder");
+    refocusSections();
   };
 
   const closeSpotify = () => {
     setSpotifyOpen(false);
     setOpenApps((prev) => prev.filter((id) => id !== "spotify"));
-    setActiveApp("Finder");
+    refocusSections();
   };
 
   const spotlightItems = useMemo<SpotlightItem[]>(() => {
@@ -198,16 +290,43 @@ export default function MacDesktop() {
       icon: app.icon,
       kind: "Application" as const,
     }));
-    const finderIcon =
-      DOCK_APPS.find((app) => app.id === "finder")?.icon ?? "";
     const folders = DESKTOP_FOLDERS.map((folder) => ({
       id: `folder-${folder.id}`,
       name: folder.label,
-      icon: finderIcon,
+      icon: SECTION_ICON_SRC[folder.id],
       kind: "Folder" as const,
     }));
     return [...apps, ...folders];
   }, []);
+
+  // Landing: 3 s after the desktop appears, open Experience, then About Me
+  // (Notes) in front of it. Skipped if the visitor already opened something.
+  useEffect(() => {
+    if (!landing) return;
+    const timers: number[] = [];
+    timers.push(
+      window.setTimeout(() => {
+        if (userOpenedRef.current) return;
+        const { x, y } = landing.experience;
+        zRef.current += 1;
+        dispatch({ type: "open", id: "experience", z: zRef.current, base: { x, y } });
+        dispatch({ type: "blur" });
+
+        timers.push(
+          window.setTimeout(() => {
+            if (userOpenedRef.current) return;
+            zRef.current += 1;
+            setNotesZ(zRef.current);
+            setNotesMinimized(false);
+            setNotesOpen(true);
+            setOpenApps((prev) => (prev.includes("notes") ? prev : [...prev, "notes"]));
+            setActiveApp("Notes");
+          }, 450),
+        );
+      }, 3000),
+    );
+    return () => timers.forEach((t) => window.clearTimeout(t));
+  }, [landing]);
 
   useEffect(() => {
     initUiSound();
@@ -246,41 +365,19 @@ export default function MacDesktop() {
   }, []);
 
   const markOpen = (appId: string, label?: string) => {
-    setActiveApp(label ?? APP_NAMES[appId] ?? "Finder");
+    userOpenedRef.current = true;
+    setActiveApp(label ?? APP_NAMES[appId] ?? DEFAULT_APP_NAME);
     setOpenApps((prev) => (prev.includes(appId) ? prev : [...prev, appId]));
   };
 
-  const openFolderWindow = (id: FolderId) => {
-    // Re-clicking the same open folder just focuses / unminimizes it
-    if (openFolder === id) {
-      setFolderMinimized(false);
-      focusFolder(id);
-      return;
-    }
-    setOpenFolder(id);
-    setFolderMinimized(false);
-    markOpen("finder", FOLDER_WINDOWS[id].title);
-    focusFolder(id);
-  };
-
-  const closeFolderWindow = () => {
-    setOpenFolder(null);
-    setFolderMinimized(false);
-    setActiveApp("Finder");
+  const openFolderTarget = (id: FolderId | string) => {
+    const target = resolveFolderTarget(id);
+    if (target.kind === "section") openSection(target.id);
+    else if (target.kind === "notes") openNotesWindow();
   };
 
   const openApp = (appId: string) => {
     if (appId === "dock-separator") return;
-
-    if (appId === "finder") {
-      if (openFolder && folderMinimized) {
-        setFolderMinimized(false);
-        focusFolder();
-        return;
-      }
-      openFolderWindow("about");
-      return;
-    }
 
     if (appId === "notes") {
       if (notesOpen && notesMinimized) {
@@ -332,38 +429,15 @@ export default function MacDesktop() {
       openApp(item.id);
       return;
     }
-    const folderId = item.id.replace(/^folder-/, "") as FolderId;
-    if (folderId === "notes") {
-      openNotesWindow();
-      return;
-    }
-    if (folderId in FOLDER_WINDOWS) openFolderWindow(folderId);
+    setSpotlightOpen(false);
+    openFolderTarget(item.id.replace(/^folder-/, ""));
   };
 
   const handleMenuAction = (action: string) => {
-    if (
-      action === "find" ||
-      action === "search-help" ||
-      action === "open-location"
-    ) {
-      setSpotlightOpen(true);
-      return;
-    }
-    if (action === "about") {
-      openFolderWindow("about");
-      return;
-    }
-    if (action === "new-finder") {
-      openFolderWindow("projects");
-    }
-  };
-
-  const handleIPhoneOpen = (action: IPhoneAppAction) => {
-    if (action.type === "folder") {
-      openFolderWindow(action.id);
-      return;
-    }
-    openApp(action.id);
+    const target = resolveMenuAction(action);
+    if (target.kind === "spotlight") setSpotlightOpen(true);
+    else if (target.kind === "notes") openNotesWindow();
+    else if (target.kind === "section") openSection(target.id);
   };
 
   return (
@@ -385,7 +459,7 @@ export default function MacDesktop() {
           <Folder
             key={folder.id}
             label={folder.label}
-            onOpen={() => openFolderWindow(folder.id)}
+            onOpen={() => openFolderTarget(folder.id)}
           />
         ))}
       </div>
@@ -441,11 +515,6 @@ export default function MacDesktop() {
         <ClaudeMascot onClick={() => openApp("claude")} />
       </div>
 
-      <IPhoneHome
-        onOpen={handleIPhoneOpen}
-        onStatusTap={() => setNotificationsOpen(true)}
-      />
-
       <ToastNotifications
         paused={
           notificationsOpen || spotlightOpen || notesOpen || notionOpen
@@ -463,46 +532,85 @@ export default function MacDesktop() {
         }}
       />
 
-      <FinderApp
-        open={!!openFolder}
-        initialSection={openFolder ?? "about"}
-        minimized={folderMinimized}
-        zIndex={folderZ}
-        onClose={closeFolderWindow}
-        onMinimize={() => setFolderMinimized(true)}
-        onFocus={() => focusFolder()}
-        onSectionChange={(id) => {
-          setOpenFolder(id);
-          focusFolder(id);
-        }}
-      />
+      <div className="mac-desktop__windows has-tabs">
+        {/* Phone navigation: one tab per section, replaces the desktop folders */}
+        <nav className="ph-tabs" aria-label="Sections">
+          {SECTION_IDS.map((id) => {
+            const state = wm.windows[id];
+            const active = wm.focused === id && !state.minimized;
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-current={active ? "page" : undefined}
+                data-ui-sound="click"
+                className={cn(
+                  "ph-tab",
+                  active && "is-active",
+                  state.open && !active && "is-open",
+                )}
+                onClick={() => openFolderTarget(id)}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={SECTION_ICON_SRC[id]} alt="" draggable={false} />
+                {getSection(id).name}
+              </button>
+            );
+          })}
+        </nav>
+        {SECTION_IDS.map((id) => (
+          <SectionWindow
+            key={id}
+            section={getSection(id)}
+            windowState={wm.windows[id]}
+            focused={wm.focused === id}
+            zIndex={wm.windows[id].z}
+            frameSize={
+              id === "experience" && landing
+                ? { w: landing.experience.w, h: landing.experience.h }
+                : undefined
+            }
+            onClose={() => closeSection(id)}
+            onMinimize={() => minimizeSection(id)}
+            onFocus={() => {
+              if (wm.focused !== id) focusSection(id);
+            }}
+          />
+        ))}
 
-      <NotesApp
-        open={notesOpen}
-        minimized={notesMinimized}
-        zIndex={notesZ}
-        onClose={closeNotes}
-        onMinimize={() => setNotesMinimized(true)}
-        onFocus={focusNotes}
-      />
+        <NotesApp
+          open={notesOpen}
+          minimized={notesMinimized}
+          zIndex={notesZ}
+          focused={activeApp === "Notes"}
+          initialPosition={
+            landing ? { x: landing.notes.x, y: landing.notes.y } : undefined
+          }
+          width={landing?.notes.w}
+          height={landing?.notes.h}
+          onClose={closeNotes}
+          onMinimize={() => setNotesMinimized(true)}
+          onFocus={focusNotes}
+        />
 
-      <NotionApp
-        open={notionOpen}
-        minimized={notionMinimized}
-        zIndex={notionZ}
-        onClose={closeNotion}
-        onMinimize={() => setNotionMinimized(true)}
-        onFocus={focusNotion}
-      />
+        <NotionApp
+          open={notionOpen}
+          minimized={notionMinimized}
+          zIndex={notionZ}
+          onClose={closeNotion}
+          onMinimize={() => setNotionMinimized(true)}
+          onFocus={focusNotion}
+        />
 
-      <MailApp
-        open={mailOpen}
-        minimized={mailMinimized}
-        zIndex={mailZ}
-        onClose={closeMail}
-        onMinimize={() => setMailMinimized(true)}
-        onFocus={focusMail}
-      />
+        <MailApp
+          open={mailOpen}
+          minimized={mailMinimized}
+          zIndex={mailZ}
+          onClose={closeMail}
+          onMinimize={() => setMailMinimized(true)}
+          onFocus={focusMail}
+        />
+      </div>
 
       <SpotifyApp open={spotifyOpen} onClose={closeSpotify} />
 

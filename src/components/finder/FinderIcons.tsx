@@ -215,3 +215,12 @@ export function IconViewGallery({ active = false }: { active?: boolean }) {
     </svg>
   );
 }
+
+/** Icon image path for each section window / Spotlight folder result. */
+export const SECTION_ICON_SRC = {
+  about: `${FINDER}/sidebar-about.png`,
+  experience: `${FINDER}/sidebar-experience.png`,
+  projects: `${FINDER}/sidebar-projects.png`,
+  skills: `${FINDER}/sidebar-skills.png`,
+  resume: `${FINDER}/sidebar-resume.png`,
+} as const;
